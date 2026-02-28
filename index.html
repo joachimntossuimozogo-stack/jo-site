@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Jo Space Clicker</title>
+<title>Jo Target Shooter</title>
 <style>
 body {
   margin: 0;
@@ -13,31 +13,33 @@ body {
 }
 
 h1 {
-  margin-top: 40px;
+  margin-top: 20px;
 }
 
-#score {
-  font-size: 30px;
-  margin: 20px;
+#score, #timer, #combo, #highscore {
+  margin: 5px;
+  font-size: 18px;
 }
 
-#timer {
-  font-size: 20px;
-  margin-bottom: 20px;
+#gameArea {
+  position: relative;
+  width: 100vw;
+  height: 80vh;
 }
 
-#gameBtn {
-  padding: 20px 40px;
-  font-size: 20px;
-  border: none;
-  border-radius: 12px;
-  background: #00aaff;
-  color: white;
+.target {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: red;
+  border-radius: 50%;
   cursor: pointer;
+  box-shadow: 0 0 20px red;
+  transition: transform 0.1s;
 }
 
-#gameBtn:hover {
-  background: #0088cc;
+.target:hover {
+  transform: scale(1.2);
 }
 
 canvas {
@@ -50,28 +52,63 @@ canvas {
 </head>
 <body>
 
-<h1>🚀 SPACE CLICKER</h1>
+<h1>🎯 TARGET SHOOTER</h1>
 <div id="score">Score: 0</div>
+<div id="combo">Combo: 0</div>
 <div id="timer">Time: 30</div>
-<button id="gameBtn">CLICK FAST</button>
+<div id="highscore">High Score: 0</div>
+
+<div id="gameArea"></div>
 
 <canvas id="bg"></canvas>
 
 <script>
 let score = 0;
+let combo = 0;
 let timeLeft = 30;
+let highScore = localStorage.getItem("highScore") || 0;
 let gameActive = true;
 
 const scoreDisplay = document.getElementById("score");
+const comboDisplay = document.getElementById("combo");
 const timerDisplay = document.getElementById("timer");
-const button = document.getElementById("gameBtn");
+const highScoreDisplay = document.getElementById("highscore");
+const gameArea = document.getElementById("gameArea");
 
-button.onclick = function() {
-  if (gameActive) {
-    score++;
+highScoreDisplay.innerText = "High Score: " + highScore;
+
+function spawnTarget() {
+  if (!gameActive) return;
+
+  const target = document.createElement("div");
+  target.classList.add("target");
+
+  const x = Math.random() * (window.innerWidth - 60);
+  const y = Math.random() * (window.innerHeight - 200);
+
+  target.style.left = x + "px";
+  target.style.top = y + "px";
+
+  target.onclick = function() {
+    score += 10;
+    combo++;
     scoreDisplay.innerText = "Score: " + score;
-  }
-};
+    comboDisplay.innerText = "Combo: " + combo;
+    target.remove();
+  };
+
+  gameArea.appendChild(target);
+
+  setTimeout(() => {
+    if (target.parentNode) {
+      combo = 0;
+      comboDisplay.innerText = "Combo: 0";
+      target.remove();
+    }
+  }, 1000);
+}
+
+setInterval(spawnTarget, 800);
 
 let timer = setInterval(function() {
   if (timeLeft > 0) {
@@ -80,8 +117,13 @@ let timer = setInterval(function() {
   } else {
     gameActive = false;
     clearInterval(timer);
-    button.innerText = "GAME OVER";
-    alert("🔥 Final Score: " + score);
+
+    if (score > highScore) {
+      localStorage.setItem("highScore", score);
+      alert("🔥 NEW HIGH SCORE: " + score);
+    } else {
+      alert("Final Score: " + score);
+    }
   }
 }, 1000);
 
