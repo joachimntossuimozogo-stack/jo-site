@@ -1,19 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Jo 2D Shooter</title>
+<title>NEON RUNNER</title>
 <style>
 body {
   margin: 0;
   overflow: hidden;
-  background: black;
+  font-family: Arial;
+  background: #0f0f1f;
 }
+
 canvas {
-  display: block;
+  display: none;
+  background: linear-gradient(#14142b, #1e1e40);
+}
+
+#menu {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, #14142b, #1e1e40);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+h1 {
+  font-size: 60px;
+  color: cyan;
+  text-shadow: 0 0 20px cyan;
+}
+
+button {
+  padding: 15px 40px;
+  margin: 10px;
+  font-size: 20px;
+  border: none;
+  border-radius: 10px;
+  background: cyan;
+  color: black;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #00bfff;
+}
+
+#creditsBox {
+  display: none;
+  margin-top: 20px;
+  font-size: 20px;
 }
 </style>
 </head>
 <body>
+
+<div id="menu">
+  <h1>NEON RUNNER</h1>
+  <button onclick="startGame()">PLAY</button>
+  <button onclick="showCredits()">CREDITS</button>
+  <div id="creditsBox">Dev: @ItsJojoKario</div>
+</div>
 
 <canvas id="game"></canvas>
 
@@ -24,113 +73,103 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let keys = {};
-let bullets = [];
-let enemies = [];
-let score = 0;
-
 let player = {
-  x: canvas.width / 2,
-  y: canvas.height / 2,
-  size: 20,
-  speed: 5
+  x: 100,
+  y: canvas.height - 150,
+  width: 50,
+  height: 50,
+  dy: 0,
+  jumpForce: 20,
+  gravity: 1.2,
+  grounded: true
 };
 
-document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+let obstacles = [];
+let score = 0;
+let gameRunning = false;
 
-canvas.addEventListener("click", () => {
-  bullets.push({
-    x: player.x,
-    y: player.y,
-    dx: mouse.x - player.x,
-    dy: mouse.y - player.y
-  });
-});
-
-let mouse = { x: 0, y: 0 };
-canvas.addEventListener("mousemove", e => {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
-});
-
-function spawnEnemy() {
-  enemies.push({
-    x: Math.random() * canvas.width,
-    y: -20,
-    size: 20,
-    speed: 2
-  });
+function showCredits() {
+  const box = document.getElementById("creditsBox");
+  box.style.display = box.style.display === "none" ? "block" : "none";
 }
 
-setInterval(spawnEnemy, 1000);
+function startGame() {
+  document.getElementById("menu").style.display = "none";
+  canvas.style.display = "block";
+  gameRunning = true;
+  spawnObstacle();
+  gameLoop();
+}
+
+function spawnObstacle() {
+  setInterval(() => {
+    obstacles.push({
+      x: canvas.width,
+      y: canvas.height - 100,
+      width: 40,
+      height: 60
+    });
+  }, 2000);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space" && player.grounded) {
+    player.dy = -player.jumpForce;
+    player.grounded = false;
+  }
+});
 
 function update() {
+  player.dy += player.gravity;
+  player.y += player.dy;
 
-  if (keys["w"]) player.y -= player.speed;
-  if (keys["s"]) player.y += player.speed;
-  if (keys["a"]) player.x -= player.speed;
-  if (keys["d"]) player.x += player.speed;
+  if (player.y >= canvas.height - 150) {
+    player.y = canvas.height - 150;
+    player.grounded = true;
+  }
 
-  bullets.forEach((b, i) => {
-    let length = Math.hypot(b.dx, b.dy);
-    b.x += (b.dx / length) * 10;
-    b.y += (b.dy / length) * 10;
+  obstacles.forEach((obs, index) => {
+    obs.x -= 8;
 
-    enemies.forEach((e, j) => {
-      if (Math.hypot(b.x - e.x, b.y - e.y) < e.size) {
-        enemies.splice(j, 1);
-        bullets.splice(i, 1);
-        score++;
-      }
-    });
-  });
+    if (
+      player.x < obs.x + obs.width &&
+      player.x + player.width > obs.x &&
+      player.y < obs.y + obs.height &&
+      player.y + player.height > obs.y
+    ) {
+      alert("GAME OVER\nScore: " + score);
+      location.reload();
+    }
 
-  enemies.forEach((e, i) => {
-    e.y += e.speed;
-
-    if (Math.hypot(player.x - e.x, player.y - e.y) < e.size) {
-      alert("GAME OVER - Score: " + score);
-      document.location.reload();
+    if (obs.x + obs.width < 0) {
+      obstacles.splice(index, 1);
+      score++;
     }
   });
 }
 
 function draw() {
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "cyan";
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillStyle = "#00ffff";
+  ctx.fillRect(player.x, player.y, player.width, player.height);
 
-  ctx.fillStyle = "yellow";
-  bullets.forEach(b => {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  ctx.fillStyle = "red";
-  enemies.forEach(e => {
-    ctx.beginPath();
-    ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
-    ctx.fill();
+  ctx.fillStyle = "#ff0040";
+  obstacles.forEach(obs => {
+    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
   });
 
   ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
-  ctx.fillText("Score: " + score, 20, 30);
+  ctx.font = "30px Arial";
+  ctx.fillText("Score: " + score, 20, 50);
 }
 
 function gameLoop() {
+  if (!gameRunning) return;
   update();
   draw();
   requestAnimationFrame(gameLoop);
 }
-
-gameLoop();
 </script>
 
 </body>
