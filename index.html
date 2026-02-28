@@ -1,1188 +1,1055 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>City Sprint — by @ItsJojoKario</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>City Sprint</title>
   <style>
     :root{
-      --ui-bg: rgba(15,18,28,.72);
-      --ui-bd: rgba(255,255,255,.12);
-      --ui-tx: rgba(255,255,255,.92);
-      --accent: #4cc9f0;
-      --accent2:#80ffdb;
+      --bg:#8fd3ff;
+      --panel: rgba(10,16,30,.78);
+      --panel2: rgba(255,255,255,.08);
+      --txt:#eaf2ff;
+      --muted: rgba(234,242,255,.75);
+      --accent:#29d3c6;
+      --accent2:#7aa7ff;
       --danger:#ff4d6d;
-      --ok:#2ee59d;
-      --shadow: 0 18px 60px rgba(0,0,0,.45);
-      --round: 18px;
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --r: 18px;
+      --uiScale: 1;
+      font-synthesis-weight:none;
     }
-    html,body{height:100%; margin:0; background:#0b0f1a; overflow:hidden; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;}
-    canvas{position:fixed; inset:0; width:100%; height:100%; display:block;}
-    .ui{
-      position:fixed; inset:0; pointer-events:none; color:var(--ui-tx);
-    }
-    .panel{
-      pointer-events:auto;
-      position:absolute; left:50%; top:50%;
-      transform:translate(-50%,-50%);
-      width:min(620px, calc(100vw - 28px));
-      background:linear-gradient(180deg, rgba(21,26,45,.82), rgba(10,12,20,.82));
-      border:1px solid var(--ui-bd);
-      border-radius: var(--round);
-      box-shadow: var(--shadow);
-      padding:18px;
-      backdrop-filter: blur(10px);
-    }
-    .title{
-      display:flex; align-items:center; gap:12px;
-      font-weight:900; letter-spacing:.4px;
-      font-size: clamp(22px, 3.6vw, 34px);
-      margin: 2px 0 10px;
-    }
-    .badge{
-      font-size:12px; font-weight:800; padding:6px 10px;
-      background:rgba(76,201,240,.16);
-      border:1px solid rgba(76,201,240,.35);
-      border-radius:999px;
-      color:#c8f7ff;
-      white-space:nowrap;
-    }
-    .subtitle{opacity:.85; margin:0 0 14px; line-height:1.35;}
-    .row{display:flex; gap:10px; flex-wrap:wrap;}
-    .btn{
-      pointer-events:auto;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: var(--ui-tx);
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-weight:800;
-      cursor:pointer;
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
-      user-select:none;
-    }
-    .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22);}
-    .btn.primary{
-      background: linear-gradient(135deg, rgba(76,201,240,.95), rgba(128,255,219,.95));
-      color:#001018;
-      border: none;
-    }
-    .btn.primary:hover{transform: translateY(-2px);}
-    .btn.danger{
-      background: rgba(255,77,109,.14);
-      border-color: rgba(255,77,109,.35);
-      color:#ffdbe2;
-    }
-    .btn.small{padding:8px 10px; border-radius:12px; font-size:13px;}
-    .split{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px;}
-    .card{
-      flex:1 1 220px;
-      background: rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius: 16px;
-      padding: 12px;
-    }
-    .card h3{margin:0 0 8px; font-size:14px; opacity:.95;}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; opacity:.9;}
-    .hud{
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:#0b1020;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    #wrap{position:fixed;inset:0;overflow:hidden}
+    canvas{position:absolute;inset:0;width:100%;height:100%}
+    #ui{position:absolute;inset:0;pointer-events:none;transform:scale(var(--uiScale));transform-origin:top left}
+    /* HUD */
+    #hud{
+      position:absolute;left:16px;top:12px;
+      display:flex;gap:12px;align-items:flex-start;
+      color:var(--txt);
       pointer-events:none;
-      position:absolute; left:14px; top:12px;
-      display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;
     }
     .pill{
-      pointer-events:none;
-      background: rgba(0,0,0,.30);
-      border:1px solid rgba(255,255,255,.14);
-      border-radius:999px;
-      padding: 8px 12px;
-      font-weight:900;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      backdrop-filter: blur(8px);
-    }
-    .pill span{opacity:.85; font-weight:800}
-    .hudRight{
-      pointer-events:auto;
-      position:absolute; right:14px; top:12px;
-      display:flex; gap:8px; align-items:center;
-    }
-    .hint{
-      pointer-events:none;
-      position:absolute; left:50%; bottom:12px;
-      transform:translateX(-50%);
-      opacity:.86;
-      font-weight:800;
-      background: rgba(0,0,0,.26);
+      background:rgba(0,0,0,.25);
       border:1px solid rgba(255,255,255,.12);
-      padding: 10px 12px;
-      border-radius: 999px;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:700;
+      letter-spacing:.2px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
     }
-    .overlay{
-      position:absolute; inset:0;
-      background: rgba(0,0,0,.35);
+    .hudBox{
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(10px);
+      border-radius:14px;
+      padding:10px 12px;
+      min-width:150px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    }
+    .hudBox b{display:block;font-size:12px;color:rgba(234,242,255,.85);margin-bottom:4px}
+    .hudBox span{display:block;font-size:18px;font-weight:900}
+    /* MENU PANEL */
+    #menu{
+      position:absolute;left:50%;top:50%;
+      transform:translate(-50%,-50%);
+      width:min(860px,92vw);
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:26px;
+      box-shadow:var(--shadow);
+      padding:22px;
+      color:var(--txt);
+      pointer-events:auto;
+    }
+    #menuHeader{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+    }
+    #titleWrap h1{margin:0;font-size:44px;line-height:1.05}
+    #titleWrap p{margin:8px 0 0;color:var(--muted);max-width:520px}
+    #modeTag{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:800;color:rgba(234,242,255,.92);
+      white-space:nowrap;
+    }
+    #modeDot{width:8px;height:8px;border-radius:99px;background:var(--accent)}
+    #menuBtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      font-weight:900;
+      cursor:pointer;
+      color:#081019;
+      background:linear-gradient(180deg, #42f1e3, #1cc8bd);
+      box-shadow: 0 10px 30px rgba(41,211,198,.18);
+      display:inline-flex;align-items:center;gap:10px;
+      transition:transform .12s ease, filter .12s ease;
+    }
+    .btn:hover{transform:translateY(-1px);filter:brightness(1.03)}
+    .btn.secondary{
+      background:rgba(255,255,255,.08);
+      color:var(--txt);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:none;
+    }
+    .btn.danger{
+      background:linear-gradient(180deg, #ff6b85, #ff375f);
+      color:white;
+      box-shadow: 0 12px 35px rgba(255,55,95,.18);
+    }
+    #menuGrid{
+      display:grid;
+      grid-template-columns:1.3fr 1fr;
+      gap:14px;
+      margin-top:16px;
+    }
+    .card{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:14px;
+    }
+    .card h3{margin:0 0 8px;font-size:14px;color:rgba(234,242,255,.9)}
+    .card .small{font-size:13px;color:var(--muted);line-height:1.5}
+    .kbd{display:inline-flex;align-items:center;gap:6px}
+    .key{
+      font-weight:900;
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:10px;
+      padding:4px 8px;
+      font-size:12px;
+    }
+    /* MODALS */
+    .modalMask{
+      position:absolute;inset:0;
+      background:rgba(0,0,0,.45);
       display:none;
       pointer-events:auto;
     }
-    .overlay.show{display:block;}
-    .loadWrap{
-      display:flex; flex-direction:column; gap:12px;
-      margin-top:10px;
+    .modal{
+      position:absolute;left:50%;top:50%;
+      transform:translate(-50%,-50%);
+      width:min(560px,92vw);
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      padding:18px;
+      color:var(--txt);
     }
-    .bar{
-      height: 12px;
-      background: rgba(255,255,255,.09);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:999px;
-      overflow:hidden;
+    .modal h2{margin:0 0 10px}
+    .modal p{margin:0;color:var(--muted);line-height:1.6}
+    .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+    /* INGAME BAR */
+    #ingameBar{
+      position:absolute;right:16px;top:12px;
+      display:flex;gap:10px;
+      pointer-events:auto;
     }
-    .bar > i{
-      display:block; height:100%;
-      width:0%;
-      background: linear-gradient(135deg, rgba(76,201,240,1), rgba(128,255,219,1));
+    #ingameBar .btn{
+      padding:10px 12px;border-radius:14px;font-weight:900;
     }
-    .creditsBox{
-      max-height: 220px;
-      overflow:auto;
-      padding-right:6px;
-      line-height:1.45;
-      opacity:.92;
+    #ingameBar .btn.secondary{pointer-events:auto}
+    /* MOBILE */
+    @media (max-width:520px){
+      #titleWrap h1{font-size:34px}
+      #menuGrid{grid-template-columns:1fr}
+      :root{--uiScale: .95}
     }
-    .table{
-      width:100%;
-      border-collapse: collapse;
-      font-weight:800;
-      overflow:hidden;
-      border-radius:12px;
-    }
-    .table th,.table td{
-      text-align:left;
-      padding:10px 10px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      font-size:13px;
-    }
-    .table th{opacity:.85; font-weight:900}
-    .table tr:last-child td{border-bottom:none;}
-    .right{text-align:right;}
-    .dim{opacity:.7}
   </style>
 </head>
-
 <body>
-<canvas id="c"></canvas>
+<div id="wrap">
+  <canvas id="bg"></canvas>
+  <canvas id="game"></canvas>
 
-<div class="ui" id="ui">
-
-  <!-- HUD -->
-  <div class="hud" id="hud" style="display:none;">
-    <div class="pill" id="hudScore">Score: <span>0</span></div>
-    <div class="pill" id="hudTime">Time: <span>0.0s</span></div>
-    <div class="pill" id="hudBest">Best: <span>0</span> <span class="dim">/</span> <span>0.0s</span></div>
-  </div>
-  <div class="hudRight" id="hudRight" style="display:none;">
-    <button class="btn small" id="btnPause">⏸ Pause</button>
-    <button class="btn small danger" id="btnQuit">⏏ Quit</button>
-  </div>
-  <div class="hint" id="hint" style="display:none;">Espace / ↑ / clic = SAUTER • P = Pause</div>
-
-  <!-- Loading -->
-  <div class="panel" id="screenLoading">
-    <div class="title">
-      <div>City Sprint</div>
-      <div class="badge">by @ItsJojoKario</div>
-    </div>
-    <p class="subtitle">Chargement des assets… (oui c’est un faux chargement, mais ça fait “vrai jeu” 😏)</p>
-    <div class="loadWrap">
-      <div class="bar"><i id="loadBar"></i></div>
-      <div class="mono" id="loadText">0%</div>
-    </div>
-  </div>
-
-  <!-- Menu -->
-  <div class="panel" id="screenMenu" style="display:none;">
-    <div class="title">
-      <div>City Sprint</div>
-      <div class="badge" id="badgeMode">DAY</div>
-    </div>
-    <p class="subtitle" id="menuDesc">Runner 2D : saute au-dessus des voitures, survie le plus longtemps possible, score + temps.</p>
-
-    <div class="row">
-      <button class="btn primary" id="btnPlay">▶ Play</button>
-      <button class="btn" id="btnLeaderboard">🏆 Leaderboard</button>
-      <button class="btn" id="btnCredits">ℹ Credits</button>
+  <div id="ui">
+    <!-- HUD (ingame) -->
+    <div id="hud" style="display:none">
+      <div class="pill" id="dayNightPill"><span id="modeDot"></span><span id="dayNightText">DAY</span></div>
+      <div class="hudBox"><b>Score</b><span id="hudScore">0</span></div>
+      <div class="hudBox"><b>Time</b><span id="hudTime">0.0s</span></div>
+      <div class="hudBox"><b>Best (local)</b><span id="hudBest">0 / 0.0s</span></div>
     </div>
 
-    <div class="split">
-      <div class="card">
-        <h3>Contrôles</h3>
-        <div class="mono">Espace / ↑ / clic : sauter</div>
-        <div class="mono">P : pause</div>
-        <div class="mono">Quit : bouton en jeu</div>
-      </div>
-      <div class="card">
-        <h3>Records (local)</h3>
-        <div class="mono" id="menuBest">Best score: 0</div>
-        <div class="mono" id="menuBestTime">Best time: 0.0s</div>
-        <div class="mono dim">Global = besoin d’un serveur (Firebase possible)</div>
-      </div>
+    <div id="ingameBar" style="display:none">
+      <button class="btn secondary" id="btnPause">⏸ Pause (P)</button>
+      <button class="btn danger" id="btnQuit">⟵ Quit</button>
     </div>
-  </div>
 
-  <!-- Credits -->
-  <div class="overlay" id="overlayCredits">
-    <div class="panel">
-      <div class="title">
-        <div>Credits</div>
-        <div class="badge">dev @ItsJojoKario</div>
-      </div>
-      <div class="creditsBox mono">
-        <div><b>Jeu</b> : City Sprint</div>
-        <div><b>Dev</b> : @ItsJojoKario</div>
-        <div><b>Tech</b> : HTML + Canvas + JS</div>
-        <hr style="border:0;border-top:1px solid rgba(255,255,255,.10);margin:10px 0;">
-        <div><b>Tips</b> :</div>
-        <div>- Si tu veux un leaderboard mondial, on branche Firebase (gratuit).</div>
-        <div>- On peut ajouter : skins, shop, power-ups, sons, mobile full, etc.</div>
-      </div>
-      <div class="row" style="margin-top:12px;">
-        <button class="btn primary" id="btnCloseCredits">OK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Leaderboard -->
-  <div class="overlay" id="overlayBoard">
-    <div class="panel">
-      <div class="title">
-        <div>Leaderboard (local)</div>
-        <div class="badge">sur ton navigateur</div>
+    <!-- Main Menu -->
+    <div id="menu">
+      <div id="menuHeader">
+        <div id="titleWrap">
+          <h1>City Sprint</h1>
+          <p>Runner 2D : saute au-dessus des obstacles, survie le plus longtemps possible. Score + temps.</p>
+          <div id="menuBtns">
+            <button class="btn" id="btnPlay">▶ Play</button>
+            <button class="btn secondary" id="btnLB">🏆 Leaderboard</button>
+            <button class="btn secondary" id="btnCredits">ℹ Credits</button>
+          </div>
+        </div>
+        <div id="modeTag"><span id="modeDot"></span><span id="menuDayNight">DAY</span></div>
       </div>
 
-      <table class="table" id="boardTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Score</th>
-            <th class="right">Time</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-
-      <div class="row" style="margin-top:12px;">
-        <button class="btn" id="btnResetBoard">🗑 Reset</button>
-        <button class="btn primary" id="btnCloseBoard">OK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Pause -->
-  <div class="overlay" id="overlayPause">
-    <div class="panel">
-      <div class="title">
-        <div>Pause</div>
-        <div class="badge">City Sprint</div>
-      </div>
-      <p class="subtitle">Tu veux continuer ou quitter ?</p>
-      <div class="row">
-        <button class="btn primary" id="btnResume">▶ Resume</button>
-        <button class="btn danger" id="btnQuit2">⏏ Quit</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- GameOver -->
-  <div class="overlay" id="overlayOver">
-    <div class="panel">
-      <div class="title">
-        <div>Game Over</div>
-        <div class="badge">ouch 😵</div>
-      </div>
-      <div class="split">
+      <div id="menuGrid">
         <div class="card">
-          <h3>Résultat</h3>
-          <div class="mono" id="overScore">Score: 0</div>
-          <div class="mono" id="overTime">Time: 0.0s</div>
+          <h3>Contrôles</h3>
+          <div class="small">
+            <div class="kbd"><span class="key">Espace</span> / <span class="key">↑</span> / <span class="key">clic</span> : sauter</div><br/>
+            <div class="kbd"><span class="key">P</span> : pause / reprise</div><br/>
+            <div class="kbd"><span class="key">R</span> : restart (après mort)</div>
+          </div>
         </div>
         <div class="card">
           <h3>Records (local)</h3>
-          <div class="mono" id="overBest">Best score: 0</div>
-          <div class="mono" id="overBestTime">Best time: 0.0s</div>
+          <div class="small" id="menuBest">Best score : 0<br/>Best time : 0.0s</div>
+          <div class="small" style="margin-top:10px;opacity:.9">
+            Global leaderboard = besoin d’un serveur (Firebase possible).
+          </div>
         </div>
       </div>
-      <div class="row" style="margin-top:12px;">
-        <button class="btn primary" id="btnAgain">↻ Rejouer</button>
-        <button class="btn" id="btnBackMenu">⇦ Menu</button>
+    </div>
+
+    <!-- Modals -->
+    <div class="modalMask" id="maskLB">
+      <div class="modal">
+        <h2>Leaderboard (local)</h2>
+        <p id="lbText">Best score : 0<br/>Best time : 0.0s</p>
+        <div class="row">
+          <button class="btn secondary" id="lbClose">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalMask" id="maskCredits">
+      <div class="modal">
+        <h2>Credits</h2>
+        <p>Dev : <b>@ItsJojoKario</b><br/>Made with HTML Canvas + JS.</p>
+        <div class="row">
+          <button class="btn secondary" id="crClose">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalMask" id="maskPause">
+      <div class="modal">
+        <h2>Paused</h2>
+        <p>Appuie sur <b>P</b> ou clique <b>Resume</b>.</p>
+        <div class="row">
+          <button class="btn" id="pauseResume">Resume</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalMask" id="maskGameOver">
+      <div class="modal">
+        <h2>Game Over</h2>
+        <p id="goText">Score : 0<br/>Time : 0.0s</p>
+        <div class="row">
+          <button class="btn" id="goRestart">Restart (R)</button>
+          <button class="btn secondary" id="goMenu">Menu</button>
+        </div>
       </div>
     </div>
   </div>
-
 </div>
 
 <script>
-/* =========================
-   CONFIG (tu peux edit)
-========================= */
-const UI_TEXT = {
-  play: "▶ Play",
-  leaderboard: "🏆 Leaderboard",
-  credits: "ℹ Credits",
-  pause: "⏸ Pause",
-  quit: "⏏ Quit",
-  resume: "▶ Resume",
-  again: "↻ Rejouer",
-  backMenu: "⇦ Menu",
-  gameName: "City Sprint",
-  devTag: "dev @ItsJojoKario"
-};
+(() => {
+  // ===== Canvas setup =====
+  const bg = document.getElementById("bg");
+  const game = document.getElementById("game");
+  const bctx = bg.getContext("2d");
+  const ctx = game.getContext("2d");
 
-// gameplay
-const CFG = {
-  gravity: 3000,
-  jumpVel: 1050,          // plus haut
-  groundYRatio: 0.83,
-  baseSpeed: 520,
-  speedIncrease: 18,      // accélère avec le temps
-  spawnMin: 0.85,
-  spawnMax: 1.55,
-  dayToNightAt: 60,       // sec
-  nightDuration: 30,      // sec
-  buildingLayers: 3,
-  maxLocalScores: 10
-};
+  const ui = {
+    hud: document.getElementById("hud"),
+    ingameBar: document.getElementById("ingameBar"),
+    hudScore: document.getElementById("hudScore"),
+    hudTime: document.getElementById("hudTime"),
+    hudBest: document.getElementById("hudBest"),
+    dayNightText: document.getElementById("dayNightText"),
+    menuDayNight: document.getElementById("menuDayNight"),
+    menuBest: document.getElementById("menuBest"),
 
-/* =========================
-   CANVAS SETUP
-========================= */
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
-let W=0,H=0, DPR=1;
+    menu: document.getElementById("menu"),
 
-function resize(){
-  DPR = Math.min(2, window.devicePixelRatio || 1);
-  W = Math.floor(window.innerWidth);
-  H = Math.floor(window.innerHeight);
-  canvas.width = Math.floor(W*DPR);
-  canvas.height = Math.floor(H*DPR);
-  canvas.style.width = W+"px";
-  canvas.style.height = H+"px";
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-}
-window.addEventListener("resize", resize);
-resize();
+    btnPlay: document.getElementById("btnPlay"),
+    btnLB: document.getElementById("btnLB"),
+    btnCredits: document.getElementById("btnCredits"),
 
-/* =========================
-   UI HOOKS
-========================= */
-const ui = {
-  loading: document.getElementById("screenLoading"),
-  loadBar: document.getElementById("loadBar"),
-  loadText: document.getElementById("loadText"),
-  menu: document.getElementById("screenMenu"),
-  badgeMode: document.getElementById("badgeMode"),
-  menuBest: document.getElementById("menuBest"),
-  menuBestTime: document.getElementById("menuBestTime"),
+    maskLB: document.getElementById("maskLB"),
+    lbText: document.getElementById("lbText"),
+    lbClose: document.getElementById("lbClose"),
 
-  hud: document.getElementById("hud"),
-  hudRight: document.getElementById("hudRight"),
-  hint: document.getElementById("hint"),
-  hudScore: document.getElementById("hudScore").querySelector("span"),
-  hudTime: document.getElementById("hudTime").querySelector("span"),
-  hudBest: document.getElementById("hudBest"),
+    maskCredits: document.getElementById("maskCredits"),
+    crClose: document.getElementById("crClose"),
 
-  btnPlay: document.getElementById("btnPlay"),
-  btnLeaderboard: document.getElementById("btnLeaderboard"),
-  btnCredits: document.getElementById("btnCredits"),
+    maskPause: document.getElementById("maskPause"),
+    pauseResume: document.getElementById("pauseResume"),
 
-  overlayCredits: document.getElementById("overlayCredits"),
-  btnCloseCredits: document.getElementById("btnCloseCredits"),
+    maskGameOver: document.getElementById("maskGameOver"),
+    goText: document.getElementById("goText"),
+    goRestart: document.getElementById("goRestart"),
+    goMenu: document.getElementById("goMenu"),
 
-  overlayBoard: document.getElementById("overlayBoard"),
-  boardTable: document.getElementById("boardTable").querySelector("tbody"),
-  btnCloseBoard: document.getElementById("btnCloseBoard"),
-  btnResetBoard: document.getElementById("btnResetBoard"),
-
-  overlayPause: document.getElementById("overlayPause"),
-  btnPause: document.getElementById("btnPause"),
-  btnQuit: document.getElementById("btnQuit"),
-  btnResume: document.getElementById("btnResume"),
-  btnQuit2: document.getElementById("btnQuit2"),
-
-  overlayOver: document.getElementById("overlayOver"),
-  overScore: document.getElementById("overScore"),
-  overTime: document.getElementById("overTime"),
-  overBest: document.getElementById("overBest"),
-  overBestTime: document.getElementById("overBestTime"),
-  btnAgain: document.getElementById("btnAgain"),
-  btnBackMenu: document.getElementById("btnBackMenu"),
-};
-
-ui.btnPlay.textContent = UI_TEXT.play;
-ui.btnLeaderboard.textContent = UI_TEXT.leaderboard;
-ui.btnCredits.textContent = UI_TEXT.credits;
-ui.btnPause.textContent = UI_TEXT.pause;
-ui.btnQuit.textContent = UI_TEXT.quit;
-ui.btnResume.textContent = UI_TEXT.resume;
-ui.btnQuit2.textContent = UI_TEXT.quit;
-ui.btnAgain.textContent = UI_TEXT.again;
-ui.btnBackMenu.textContent = UI_TEXT.backMenu;
-
-/* =========================
-   LOCAL LEADERBOARD
-========================= */
-const LS_KEY = "citysprint_scores_v1";
-
-function loadBoard(){
-  try{
-    const raw = localStorage.getItem(LS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  }catch{ return []; }
-}
-
-function saveBoard(arr){
-  localStorage.setItem(LS_KEY, JSON.stringify(arr.slice(0, CFG.maxLocalScores)));
-}
-
-function addScore(score, time){
-  const arr = loadBoard();
-  arr.push({score, time, at: Date.now()});
-  arr.sort((a,b)=> (b.score - a.score) || (b.time - a.time));
-  saveBoard(arr);
-}
-
-function bestStats(){
-  const arr = loadBoard();
-  let bestScore = 0;
-  let bestTime = 0;
-  for(const r of arr){
-    if(r.score > bestScore) bestScore = r.score;
-    if(r.time > bestTime) bestTime = r.time;
-  }
-  return {bestScore, bestTime, arr};
-}
-
-function renderBoard(){
-  const {arr} = bestStats();
-  ui.boardTable.innerHTML = "";
-  if(arr.length === 0){
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="3" class="dim">Aucun score (pour l’instant 😉)</td>`;
-    ui.boardTable.appendChild(tr);
-    return;
-  }
-  arr.slice(0, CFG.maxLocalScores).forEach((r,i)=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${i+1}</td>
-      <td>${r.score}</td>
-      <td class="right">${r.time.toFixed(1)}s</td>
-    `;
-    ui.boardTable.appendChild(tr);
-  });
-}
-
-/* =========================
-   GAME STATE
-========================= */
-let state = "loading"; // loading | menu | playing | paused | over
-let t = 0;
-let last = performance.now();
-
-let score = 0;
-let timeAlive = 0;
-let speed = CFG.baseSpeed;
-let spawnTimer = 0;
-let nextSpawn = 1.0;
-
-let groundY = 0;
-
-function setState(s){
-  state = s;
-
-  ui.loading.style.display = (s==="loading") ? "block" : "none";
-  ui.menu.style.display = (s==="menu") ? "block" : "none";
-
-  const inGame = (s==="playing" || s==="paused");
-  ui.hud.style.display = inGame ? "flex" : "none";
-  ui.hudRight.style.display = inGame ? "flex" : "none";
-  ui.hint.style.display = inGame ? "block" : "none";
-
-  ui.overlayPause.classList.toggle("show", s==="paused");
-  ui.overlayOver.classList.toggle("show", s==="over");
-}
-
-function refreshMenuStats(){
-  const b = bestStats();
-  ui.menuBest.textContent = `Best score: ${b.bestScore}`;
-  ui.menuBestTime.textContent = `Best time: ${b.bestTime.toFixed(1)}s`;
-}
-
-function updateHud(){
-  ui.hudScore.textContent = score;
-  ui.hudTime.textContent = timeAlive.toFixed(1) + "s";
-  const b = bestStats();
-  ui.hudBest.innerHTML = `Best: <span>${b.bestScore}</span> <span class="dim">/</span> <span>${b.bestTime.toFixed(1)}s</span>`;
-}
-
-/* =========================
-   WORLD / BACKGROUND
-========================= */
-function rand(min,max){return Math.random()*(max-min)+min;}
-function randi(min,max){return Math.floor(rand(min,max+1));}
-
-function makeBuildings(layerIndex){
-  // stable buildings (pas de clignote) -> générés 1 fois
-  const arr = [];
-  const baseCount = 18 + layerIndex*8;
-  for(let i=0;i<baseCount;i++){
-    const w = randi(70, 160) - layerIndex*10;
-    const h = randi(140, 420) + layerIndex*30;
-    arr.push({
-      x: i * randi(90, 160),
-      w, h,
-      tone: randi(55, 95),
-      winCols: randi(3, 7),
-      winRows: randi(4, 10),
-      seed: Math.random()*9999
-    });
-  }
-  return arr;
-}
-
-const layers = Array.from({length:CFG.buildingLayers}, (_,i)=>({
-  speedMul: 0.22 + i*0.18,
-  yMul: 0.55 + i*0.09,
-  buildings: makeBuildings(i),
-}));
-
-let bgOffset = 0;
-
-/* =========================
-   PLAYER + OBSTACLES
-========================= */
-const player = {
-  x: 120,
-  y: 0,
-  w: 58,
-  h: 118,
-  vy: 0,
-  onGround: true,
-  runPhase: 0,
-  alive: true,
-};
-
-function resetGame(){
-  score = 0;
-  timeAlive = 0;
-  speed = CFG.baseSpeed;
-  spawnTimer = 0;
-  nextSpawn = rand(CFG.spawnMin, CFG.spawnMax);
-
-  obstacles.length = 0;
-  player.y = groundY - player.h;
-  player.vy = 0;
-  player.onGround = true;
-  player.alive = true;
-  player.runPhase = 0;
-
-  bgOffset = 0;
-  updateHud();
-}
-
-const obstacles = [];
-
-function spawnCar(){
-  const isTruck = Math.random() < 0.35;
-  const scale = isTruck ? rand(1.05, 1.25) : rand(0.95, 1.15);
-
-  const car = {
-    type: "car",
-    x: W + 80,
-    y: groundY,
-    w: (isTruck ? 150 : 120) * scale,
-    h: (isTruck ? 58 : 48) * scale,
-    color: isTruck ? "#ff4d6d" : "#3a86ff",
-    color2: isTruck ? "#8d0b1a" : "#1b3c9a",
-    roof: isTruck ? "#ffd166" : "#06d6a0",
-    speedMul: rand(0.95, 1.12),
-    passed: false,
+    btnPause: document.getElementById("btnPause"),
+    btnQuit: document.getElementById("btnQuit"),
   };
-  car.y = groundY - car.h;
-  obstacles.push(car);
-}
 
-function spawnCone(){
-  const cone = {
-    type: "cone",
-    x: W + 80,
-    y: groundY,
-    w: randi(28, 40),
-    h: randi(45, 62),
-    passed:false,
+  let W=0,H=0, DPR=1;
+  function resize(){
+    DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    W = Math.floor(innerWidth);
+    H = Math.floor(innerHeight);
+    bg.width = Math.floor(W*DPR);
+    bg.height = Math.floor(H*DPR);
+    game.width = Math.floor(W*DPR);
+    game.height = Math.floor(H*DPR);
+    bctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  // ===== Local best =====
+  let bestScore = Number(localStorage.getItem("bestScore") || 0);
+  let bestTime  = Number(localStorage.getItem("bestTime")  || 0);
+
+  function refreshBestUI(){
+    ui.hudBest.textContent = `${bestScore} / ${bestTime.toFixed(1)}s`;
+    ui.menuBest.innerHTML = `Best score : <b>${bestScore}</b><br/>Best time : <b>${bestTime.toFixed(1)}s</b>`;
+    ui.lbText.innerHTML = `Best score : <b>${bestScore}</b><br/>Best time : <b>${bestTime.toFixed(1)}s</b>`;
+  }
+  refreshBestUI();
+
+  // ===== Day/Night cycle =====
+  // Day 0-60s, Night 60-90s, repeat.
+  let cycleT = 0;
+  function isNight(){
+    const mod = cycleT % 90;
+    return mod >= 60;
+  }
+
+  // ===== World config =====
+  const world = {
+    gravity: 2300,
+    jumpV: 900,
+    coyote: 0.11,   // seconds after leaving ground still allowed to jump
+    jumpBuffer: 0.10, // seconds before landing (pressed early)
+    baseSpeed: 520,
   };
-  cone.y = groundY - cone.h;
-  obstacles.push(cone);
-}
 
-function spawnObstacle(){
-  if(Math.random() < 0.72) spawnCar();
-  else spawnCone();
-}
+  // ===== Game state =====
+  let state = "menu"; // menu | play | pause | over
+  let timeSurvived = 0;
+  let score = 0;
+  let speed = world.baseSpeed;
 
-/* =========================
-   INPUT
-========================= */
-function jump(){
-  if(state!=="playing") return;
-  if(player.onGround){
-    player.vy = -CFG.jumpVel;
+  const ground = {
+    grassH: 90,
+    roadH: 90,
+    yGrassTop: 0,
+    yRoadTop: 0,
+  };
+
+  const player = {
+    x: 140,
+    y: 0,
+    w: 62,
+    h: 120,
+    vy: 0,
+    onGround: false,
+    coyoteT: 0,
+    jumpBufT: 0,
+    runPhase: 0,
+    dead: false,
+  };
+
+  // Obstacles
+  const obstacles = [];
+  let spawnTimer = 0;
+
+  // Background buildings
+  const buildings = [];
+  let buildingScroll = 0;
+
+  function resetBuildings(){
+    buildings.length = 0;
+    buildingScroll = 0;
+
+    // Create a wide strip of buildings
+    let x = 0;
+    while(x < W + 800){
+      const w = rand(110, 240);
+      const h = rand(160, 460);
+      const depth = rand(0,1) < 0.55 ? 0 : 1; // 0 = near, 1 = far
+      const shade = depth ? rand(40,70) : rand(55,95);
+      const y = H - ground.grassH - ground.roadH - h + rand(-10, 30);
+      buildings.push({
+        x, y, w, h,
+        shade,
+        depth,
+        winCols: randInt(3, 7),
+        winRows: randInt(6, 14),
+        winSeed: Math.random()*9999,
+      });
+      x += w + rand(40, 110);
+    }
+  }
+
+  function resetGame(){
+    timeSurvived = 0;
+    score = 0;
+    speed = world.baseSpeed;
+    obstacles.length = 0;
+    spawnTimer = 0;
+
+    player.y = 0;
+    player.vy = 0;
     player.onGround = false;
+    player.coyoteT = 0;
+    player.jumpBufT = 0;
+    player.runPhase = 0;
+    player.dead = false;
+
+    resetBuildings();
+    updateGround();
+    placePlayerOnGround();
   }
-}
 
-window.addEventListener("keydown", (e)=>{
-  if(e.code==="Space" || e.code==="ArrowUp"){
-    e.preventDefault();
-    jump();
+  function updateGround(){
+    ground.yGrassTop = H - ground.grassH;
+    ground.yRoadTop = H - ground.grassH - ground.roadH;
   }
-  if(e.code==="KeyP"){
-    if(state==="playing") pause();
-    else if(state==="paused") resume();
+
+  function placePlayerOnGround(){
+    player.y = ground.yRoadTop - player.h;
+    player.onGround = true;
   }
-});
 
-window.addEventListener("pointerdown", ()=>{
-  // clic/touch = jump (si pas sur un bouton)
-  if(state==="playing") jump();
-});
+  function rand(a,b){ return a + Math.random()*(b-a); }
+  function randInt(a,b){ return Math.floor(rand(a,b+1)); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
 
-/* =========================
-   NIGHT/DAY CYCLE
-========================= */
-function isNight(){
-  if(timeAlive < CFG.dayToNightAt) return false;
-  const x = timeAlive - CFG.dayToNightAt;
-  const period = CFG.nightDuration + CFG.dayToNightAt; // day then night repeating
-  const mod = x % period;
-  return mod < CFG.nightDuration;
-}
-
-/* =========================
-   COLLISION
-========================= */
-function aabb(ax,ay,aw,ah, bx,by,bw,bh){
-  return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
-}
-
-/* =========================
-   DRAW HELPERS
-========================= */
-function roundRect(x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.arcTo(x+w,y,x+w,y+h,r);
-  ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r);
-  ctx.arcTo(x,y,x+w,y,r);
-  ctx.closePath();
-}
-
-function drawSky(night){
-  // gradient sky
-  const g = ctx.createLinearGradient(0,0,0,H);
-  if(night){
-    g.addColorStop(0, "#050a18");
-    g.addColorStop(1, "#1a2a4a");
-  }else{
-    g.addColorStop(0, "#87cefa");
-    g.addColorStop(1, "#d9f2ff");
+  // ===== UI & Menus =====
+  function showMenu(){
+    state = "menu";
+    ui.menu.style.display = "block";
+    ui.hud.style.display = "none";
+    ui.ingameBar.style.display = "none";
+    ui.maskPause.style.display = "none";
+    ui.maskGameOver.style.display = "none";
+    refreshBestUI();
   }
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,W,H);
-}
-
-function drawSunMoon(night){
-  if(night){
-    // moon
-    ctx.fillStyle = "rgba(255,255,255,.90)";
-    ctx.beginPath();
-    ctx.arc(W-110, 90, 38, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = "rgba(5,10,24,1)";
-    ctx.beginPath();
-    ctx.arc(W-95, 80, 36, 0, Math.PI*2);
-    ctx.fill();
-  }else{
-    ctx.fillStyle = "#ffe14d";
-    ctx.beginPath();
-    ctx.arc(W-110, 90, 44, 0, Math.PI*2);
-    ctx.fill();
+  function startPlay(){
+    resetGame();
+    state = "play";
+    ui.menu.style.display = "none";
+    ui.hud.style.display = "flex";
+    ui.ingameBar.style.display = "flex";
+    ui.maskPause.style.display = "none";
+    ui.maskGameOver.style.display = "none";
   }
-}
-
-function drawCloud(x,y,s){
-  ctx.fillStyle = "rgba(255,255,255,.92)";
-  ctx.beginPath();
-  ctx.arc(x, y, 22*s, 0, Math.PI*2);
-  ctx.arc(x+24*s, y-10*s, 26*s, 0, Math.PI*2);
-  ctx.arc(x+52*s, y, 22*s, 0, Math.PI*2);
-  ctx.fill();
-}
-
-function drawStars(){
-  ctx.fillStyle = "rgba(255,255,255,.75)";
-  for(let i=0;i<80;i++){
-    const x = (i*131.7) % W;
-    const y = (i*67.3) % (H*0.55);
-    const r = (i%3===0)? 1.5 : 1;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fill();
+  function pauseGame(){
+    if(state !== "play") return;
+    state = "pause";
+    ui.maskPause.style.display = "block";
   }
-}
+  function resumeGame(){
+    if(state !== "pause") return;
+    state = "play";
+    ui.maskPause.style.display = "none";
+  }
+  function gameOver(){
+    if(state === "over") return;
+    state = "over";
+    ui.maskGameOver.style.display = "block";
+    ui.goText.innerHTML = `Score : <b>${score}</b><br/>Time : <b>${timeSurvived.toFixed(1)}s</b>`;
+    // save best
+    if(score > bestScore){
+      bestScore = score;
+      localStorage.setItem("bestScore", bestScore);
+    }
+    if(timeSurvived > bestTime){
+      bestTime = timeSurvived;
+      localStorage.setItem("bestTime", bestTime);
+    }
+    refreshBestUI();
+  }
 
-function drawBuildings(night){
-  // road horizon line area
-  const baseY = groundY;
-  layers.forEach((layer, idx)=>{
-    const layerY = baseY - H*(0.18 + idx*0.06);
-    const mul = layer.speedMul;
-    const off = (bgOffset * mul) % 10000;
+  ui.btnPlay.addEventListener("click", startPlay);
+  ui.btnLB.addEventListener("click", () => { ui.maskLB.style.display="block"; refreshBestUI(); });
+  ui.btnCredits.addEventListener("click", () => ui.maskCredits.style.display="block");
+  ui.lbClose.addEventListener("click", () => ui.maskLB.style.display="none");
+  ui.crClose.addEventListener("click", () => ui.maskCredits.style.display="none");
 
-    layer.buildings.forEach((b, i)=>{
-      const x = (b.x - off) % (W + 300);
-      const w = b.w;
-      const h = b.h * (0.45 + idx*0.12);
-      const y = layerY - h;
+  ui.pauseResume.addEventListener("click", resumeGame);
+  ui.goRestart.addEventListener("click", startPlay);
+  ui.goMenu.addEventListener("click", showMenu);
 
-      // building body
-      const tone = b.tone + idx*8;
-      ctx.fillStyle = `rgb(${tone},${tone},${tone})`;
-      ctx.fillRect(x, y, w, h);
+  ui.btnPause.addEventListener("click", () => state==="play" ? pauseGame() : resumeGame());
+  ui.btnQuit.addEventListener("click", showMenu);
+
+  // ===== Input =====
+  let jumpPressed = false;
+
+  function pressJump(){
+    jumpPressed = true;
+    player.jumpBufT = world.jumpBuffer;
+  }
+
+  addEventListener("keydown", (e) => {
+    if(e.code === "Space" || e.code === "ArrowUp"){
+      e.preventDefault();
+      pressJump();
+    }
+    if(e.code === "KeyP"){
+      if(state === "play") pauseGame();
+      else if(state === "pause") resumeGame();
+    }
+    if(e.code === "KeyR"){
+      if(state === "over") startPlay();
+    }
+    if(e.code === "Escape"){
+      if(state === "play") pauseGame();
+      else if(state === "pause") resumeGame();
+    }
+  });
+
+  addEventListener("mousedown", (e) => {
+    // ignore clicks on UI menu buttons automatically (pointer-events)
+    if(state === "play") pressJump();
+  });
+
+  // ===== Obstacles =====
+  function spawnObstacle(){
+    // mix: cars + cones + barriers + holes
+    const types = ["car","cone","barrier","hole"];
+    // weight cars a bit more but keep variety
+    const r = Math.random();
+    let type = "car";
+    if(r < 0.40) type = "car";
+    else if(r < 0.62) type = "cone";
+    else if(r < 0.84) type = "barrier";
+    else type = "hole";
+
+    const ob = makeObstacle(type);
+    obstacles.push(ob);
+  }
+
+  function makeObstacle(type){
+    const roadY = ground.yRoadTop;
+    const ob = { x: W + 120, y: 0, w: 80, h: 40, type, hit:false };
+
+    if(type === "car"){
+      ob.w = randInt(110, 150);
+      ob.h = randInt(42, 54);
+      ob.y = roadY - ob.h;
+      ob.color = ["#d64d4d","#46a6ff","#7cdb66","#ffcc4d"][randInt(0,3)];
+    }
+    if(type === "cone"){
+      ob.w = 36; ob.h = 58;
+      ob.y = roadY - ob.h;
+      ob.color = "#ff8a2b";
+    }
+    if(type === "barrier"){
+      ob.w = randInt(78, 110);
+      ob.h = 54;
+      ob.y = roadY - ob.h;
+      ob.color = "#ff4d6d";
+    }
+    if(type === "hole"){
+      ob.w = randInt(70, 110);
+      ob.h = 18; // thin but deadly
+      ob.y = roadY - ob.h + 8;
+      ob.color = "#111";
+    }
+    return ob;
+  }
+
+  function rectsOverlap(a,b){
+    return a.x < b.x + b.w &&
+           a.x + a.w > b.x &&
+           a.y < b.y + b.h &&
+           a.y + a.h > b.y;
+  }
+
+  // ===== Drawing helpers =====
+  function clear(){
+    ctx.clearRect(0,0,W,H);
+  }
+
+  function drawBackground(){
+    // sky gradient day/night
+    const night = isNight();
+    const g = bctx.createLinearGradient(0,0,0,H);
+    if(!night){
+      g.addColorStop(0, "#7fd0ff");
+      g.addColorStop(1, "#d7f1ff");
+    }else{
+      g.addColorStop(0, "#0b1630");
+      g.addColorStop(1, "#1b2a4a");
+    }
+    bctx.fillStyle = g;
+    bctx.fillRect(0,0,W,H);
+
+    // sun/moon
+    if(!night){
+      bctx.beginPath();
+      bctx.fillStyle = "#ffe34d";
+      bctx.arc(W-90, 90, 46, 0, Math.PI*2);
+      bctx.fill();
+    }else{
+      bctx.beginPath();
+      bctx.fillStyle = "#d8e6ff";
+      bctx.arc(W-100, 95, 40, 0, Math.PI*2);
+      bctx.fill();
+      // little stars
+      bctx.fillStyle = "rgba(255,255,255,.85)";
+      for(let i=0;i<60;i++){
+        const x = (i*97 + 123) % W;
+        const y = (i*47 + 33) % (H*0.55);
+        bctx.fillRect(x,y,2,2);
+      }
+    }
+
+    // clouds (only day)
+    if(!night){
+      for(let i=0;i<4;i++){
+        const cx = (i*340 + (cycleT*12)) % (W+400) - 200;
+        const cy = 110 + i*35;
+        drawCloud(bctx, cx, cy, 1.0 - i*0.12);
+      }
+    }
+
+    // buildings (parallax)
+    drawBuildings();
+  }
+
+  function drawCloud(c, x, y, s){
+    c.save();
+    c.globalAlpha = 0.95;
+    c.fillStyle = "#fff";
+    c.beginPath();
+    c.arc(x, y, 26*s, 0, Math.PI*2);
+    c.arc(x+28*s, y+6*s, 32*s, 0, Math.PI*2);
+    c.arc(x+58*s, y, 24*s, 0, Math.PI*2);
+    c.closePath();
+    c.fill();
+    c.restore();
+  }
+
+  function drawBuildings(){
+    // scroll
+    const nearSpeed = speed * 0.22;
+    const farSpeed  = speed * 0.12;
+    buildingScroll += (nearSpeed / 60);
+
+    // keep looping buildings by shifting x
+    // (we draw using x - scrollFactor)
+    for(const b of buildings){
+      const factor = b.depth ? farSpeed : nearSpeed;
+      const dx = (factor/nearSpeed) * buildingScroll;
+      const x = b.x - dx;
+
+      // if building moved far left, recycle
+      if(x + b.w < -200){
+        // move it to the right end
+        const maxX = Math.max(...buildings.map(bb => bb.x));
+        b.x = maxX + b.w + rand(60,140);
+        b.h = rand(180, 520);
+        b.w = rand(120, 260);
+        b.y = H - ground.grassH - ground.roadH - b.h + rand(-10, 30);
+        b.winCols = randInt(3, 7);
+        b.winRows = randInt(6, 14);
+        b.shade = b.depth ? rand(40,70) : rand(55,95);
+        b.winSeed = Math.random()*9999;
+      }
+
+      // draw building
+      const col = `rgb(${b.shade},${b.shade},${b.shade})`;
+      bctx.fillStyle = col;
+      bctx.fillRect(x, b.y, b.w, b.h);
+
+      // subtle side shade
+      bctx.fillStyle = "rgba(0,0,0,.12)";
+      bctx.fillRect(x + b.w*0.62, b.y, b.w*0.38, b.h);
 
       // windows
-      const cols = b.winCols;
-      const rows = b.winRows;
-      const padX = 10, padY = 12;
-      const gapX = Math.max(6, w/(cols+2) - 6);
-      const gapY = Math.max(10, h/(rows+2) - 10);
-      const winW = Math.max(5, gapX*0.6);
-      const winH = Math.max(6, gapY*0.55);
+      const night = isNight();
+      const winOn = night ? "rgba(255,226,120,.95)" : "rgba(255,226,120,.65)";
+      const padX = b.w * 0.12;
+      const padY = b.h * 0.10;
+      const gx = b.w - padX*2;
+      const gy = b.h - padY*2;
+      const cellW = gx / b.winCols;
+      const cellH = gy / b.winRows;
 
-      for(let r=0;r<rows;r++){
-        for(let c=0;c<cols;c++){
-          const wx = x + padX + c*gapX;
-          const wy = y + padY + r*gapY;
-          if(wx+winW > x+w-8 || wy+winH > y+h-10) continue;
-
-          let on = true;
-          if(!night){
-            // day: windows less bright
-            on = ( (Math.sin((b.seed + r*13 + c*7))*0.5+0.5) > 0.7 );
-          }else{
-            // night: more lights
-            on = ( (Math.sin((b.seed + r*11 + c*5))*0.5+0.5) > 0.35 );
-          }
-          if(on){
-            ctx.fillStyle = night ? "rgba(255, 238, 120, .92)" : "rgba(255, 238, 120, .55)";
-            ctx.fillRect(wx, wy, winW, winH);
-          }
+      for(let r=0;r<b.winRows;r++){
+        for(let c=0;c<b.winCols;c++){
+          // random lit pattern stable-ish
+          const n = noise2D((b.winSeed + r*19 + c*37));
+          const lit = night ? (n > 0.30) : (n > 0.55);
+          if(!lit) continue;
+          const wx = x + padX + c*cellW + cellW*0.20;
+          const wy = b.y + padY + r*cellH + cellH*0.20;
+          const ww = cellW*0.45;
+          const wh = cellH*0.55;
+          bctx.fillStyle = winOn;
+          bctx.fillRect(wx, wy, ww, wh);
         }
       }
-    });
-  });
-}
-
-function drawGround(night){
-  // grass
-  ctx.fillStyle = "#1f8f1f";
-  ctx.fillRect(0, groundY, W, H-groundY);
-
-  // road strip
-  const roadH = Math.max(56, H*0.085);
-  ctx.fillStyle = "#2b2f3a";
-  ctx.fillRect(0, groundY - roadH, W, roadH);
-
-  // lane dashed
-  ctx.fillStyle = "rgba(255,255,255,.55)";
-  const dashY = groundY - roadH*0.45;
-  const dashW = 42, dashH = 6;
-  const off = (bgOffset*1.0) % (dashW*2);
-  for(let x=-off; x<W+dashW; x += dashW*2){
-    ctx.fillRect(x, dashY, dashW, dashH);
+    }
   }
 
-  // slight vignette at night
-  if(night){
-    ctx.fillStyle = "rgba(0,0,0,.25)";
-    ctx.fillRect(0,0,W,H);
+  function noise2D(seed){
+    // cheap deterministic-ish noise 0..1
+    const x = Math.sin(seed*999) * 10000;
+    return x - Math.floor(x);
   }
-}
 
-function drawPlayer(night){
-  const x = player.x;
-  const y = player.y;
-  const phase = player.runPhase;
+  function drawGround(){
+    // road
+    ctx.fillStyle = "#2b2f39";
+    ctx.fillRect(0, ground.yRoadTop, W, ground.roadH);
 
-  // shadow
-  ctx.fillStyle = "rgba(0,0,0,.25)";
-  ctx.beginPath();
-  ctx.ellipse(x + player.w*0.5, groundY + 10, player.w*0.42, 10, 0, 0, Math.PI*2);
-  ctx.fill();
+    // lane dashes
+    const dashY = ground.yRoadTop + ground.roadH*0.62;
+    const dashH = 6;
+    const dashW = 60;
+    const gap = 54;
+    const offset = (timeSurvived * speed) % (dashW + gap);
+    ctx.fillStyle = "rgba(255,255,255,.55)";
+    for(let x = -offset; x < W + dashW; x += dashW + gap){
+      ctx.fillRect(x, dashY, dashW, dashH);
+    }
 
-  // BODY (cartoon human)
-  const skin = "#d9b38c";
-  const shirt = "#ffffff";
-  const pants = "#2a62ff";
-  const shoe = "#111111";
-  const hair = "#5a3a22";
+    // grass
+    ctx.fillStyle = "#1d8e26";
+    ctx.fillRect(0, ground.yGrassTop, W, ground.grassH);
 
-  // head
-  const headR = 18;
-  const headX = x + player.w*0.52;
-  const headY = y + 22;
-  ctx.fillStyle = skin;
-  ctx.beginPath();
-  ctx.arc(headX, headY, headR, 0, Math.PI*2);
-  ctx.fill();
+    // small shadow line
+    ctx.fillStyle = "rgba(0,0,0,.12)";
+    ctx.fillRect(0, ground.yRoadTop, W, 3);
+  }
 
-  // hair (fringe over eyes)
-  ctx.fillStyle = hair;
-  ctx.beginPath();
-  ctx.arc(headX, headY-6, headR+2, Math.PI*1.05, Math.PI*1.95);
-  ctx.fill();
+  function drawPlayer(){
+    const x = player.x, y = player.y;
 
-  // fringe rectangle over eyes
-  ctx.fillRect(headX - headR, headY-8, headR*2, 10);
+    // shadow
+    ctx.fillStyle = "rgba(0,0,0,.22)";
+    ctx.beginPath();
+    ctx.ellipse(x + player.w*0.45, ground.yRoadTop + 6, 26, 8, 0, 0, Math.PI*2);
+    ctx.fill();
 
-  // eyes (simple)
-  ctx.fillStyle = "#1b1b1b";
-  ctx.beginPath();
-  ctx.arc(headX-5, headY+2, 2.2, 0, Math.PI*2);
-  ctx.arc(headX+6, headY+2, 2.2, 0, Math.PI*2);
-  ctx.fill();
+    // run animation
+    const running = player.onGround && state === "play";
+    if(running) player.runPhase += 0.16 * (speed/world.baseSpeed);
+    const phase = player.runPhase;
 
-  // neck
-  ctx.fillStyle = skin;
-  ctx.fillRect(x + player.w*0.45, y + 38, 10, 10);
+    // body colors
+    const skin = "#d9b18b";
+    const shirt = "#ffffff";
+    const pants = "#1e63ff";
+    const shoe = "#121212";
+    const hair = "#5b3a22";
 
-  // torso (shirt)
-  ctx.fillStyle = shirt;
-  roundRect(x + 14, y + 46, player.w-28, 42, 10);
-  ctx.fill();
+    // torso
+    const torsoW = 34, torsoH = 44;
+    const torsoX = x + 16, torsoY = y + 42;
+    ctx.fillStyle = shirt;
+    roundRect(ctx, torsoX, torsoY, torsoW, torsoH, 10, true);
 
-  // arms (swing)
-  const armSwing = Math.sin(phase)*10;
-  ctx.strokeStyle = skin;
-  ctx.lineWidth = 8;
-  ctx.lineCap = "round";
-  // left arm
-  ctx.beginPath();
-  ctx.moveTo(x + 18, y + 58);
-  ctx.lineTo(x + 6, y + 78 + armSwing);
-  ctx.stroke();
-  // right arm
-  ctx.beginPath();
-  ctx.moveTo(x + player.w-18, y + 58);
-  ctx.lineTo(x + player.w+8, y + 78 - armSwing);
-  ctx.stroke();
+    // head
+    const headR = 16;
+    const headX = x + 33, headY = y + 22;
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.arc(headX, headY, headR, 0, Math.PI*2);
+    ctx.fill();
 
-  // legs (pants) + walk anim
-  const legSwing = Math.sin(phase)*14;
-  ctx.fillStyle = pants;
+    // hair (above eyes)
+    ctx.fillStyle = hair;
+    ctx.beginPath();
+    ctx.arc(headX, headY-2, headR+2, Math.PI, Math.PI*2);
+    ctx.fill();
+    // fringe small
+    ctx.fillRect(headX - 14, headY - 6, 28, 8);
 
-  // left leg
-  roundRect(x + 20, y + 86, 14, 34 + (legSwing>0? legSwing*0.2 : 0), 6);
-  ctx.fill();
-  // right leg
-  roundRect(x + player.w-34, y + 86, 14, 34 + (legSwing<0? -legSwing*0.2 : 0), 6);
-  ctx.fill();
+    // face (tiny)
+    ctx.fillStyle = "rgba(0,0,0,.55)";
+    ctx.fillRect(headX-6, headY+2, 3, 3);
+    ctx.fillRect(headX+3, headY+2, 3, 3);
 
-  // shoes
-  ctx.fillStyle = shoe;
-  ctx.fillRect(x + 16, y + 118, 22, 8);
-  ctx.fillRect(x + player.w-38, y + 118, 22, 8);
-}
+    // arms swing
+    const armSwing = running ? Math.sin(phase)*10 : 0;
+    ctx.strokeStyle = skin;
+    ctx.lineWidth = 8;
+    ctx.lineCap = "round";
+    // left arm
+    ctx.beginPath();
+    ctx.moveTo(torsoX+2, torsoY+10);
+    ctx.lineTo(torsoX-10, torsoY+22 + armSwing);
+    ctx.stroke();
+    // right arm
+    ctx.beginPath();
+    ctx.moveTo(torsoX+torsoW-2, torsoY+10);
+    ctx.lineTo(torsoX+torsoW+12, torsoY+22 - armSwing);
+    ctx.stroke();
 
-function drawCar(o, night){
-  // wheels
-  const wheelR = o.h*0.22;
-  const wy = o.y + o.h - wheelR*0.2;
-  ctx.fillStyle = "#111";
-  ctx.beginPath(); ctx.arc(o.x + o.w*0.22, wy, wheelR, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(o.x + o.w*0.78, wy, wheelR, 0, Math.PI*2); ctx.fill();
+    // legs
+    const legSwing = running ? Math.sin(phase)*12 : 0;
+    // left leg
+    ctx.strokeStyle = pants;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(torsoX+10, torsoY+torsoH);
+    ctx.lineTo(torsoX+6, torsoY+torsoH+26 + legSwing);
+    ctx.stroke();
+    // right leg
+    ctx.beginPath();
+    ctx.moveTo(torsoX+torsoW-10, torsoY+torsoH);
+    ctx.lineTo(torsoX+torsoW-6, torsoY+torsoH+26 - legSwing);
+    ctx.stroke();
 
-  // body
-  ctx.fillStyle = o.color;
-  roundRect(o.x, o.y + o.h*0.25, o.w, o.h*0.55, 10);
-  ctx.fill();
+    // shoes
+    ctx.fillStyle = shoe;
+    ctx.fillRect(torsoX-2, torsoY+torsoH+30 + legSwing, 16, 8);
+    ctx.fillRect(torsoX+torsoW-14, torsoY+torsoH+30 - legSwing, 16, 8);
+  }
 
-  // cabin
-  ctx.fillStyle = o.roof;
-  roundRect(o.x + o.w*0.25, o.y, o.w*0.42, o.h*0.45, 10);
-  ctx.fill();
+  function roundRect(c, x,y,w,h,r,fill){
+    c.beginPath();
+    c.moveTo(x+r,y);
+    c.arcTo(x+w,y,x+w,y+h,r);
+    c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r);
+    c.arcTo(x,y,x+w,y,r);
+    if(fill) c.fill(); else c.stroke();
+  }
 
-  // windows
-  ctx.fillStyle = night ? "rgba(220,250,255,.55)" : "rgba(180,220,255,.75)";
-  roundRect(o.x + o.w*0.29, o.y + o.h*0.07, o.w*0.16, o.h*0.26, 8);
-  ctx.fill();
-  roundRect(o.x + o.w*0.47, o.y + o.h*0.07, o.w*0.16, o.h*0.26, 8);
-  ctx.fill();
+  function drawObstacle(ob){
+    const x=ob.x,y=ob.y,w=ob.w,h=ob.h;
 
-  // bumper
-  ctx.fillStyle = o.color2;
-  ctx.fillRect(o.x + o.w*0.02, o.y + o.h*0.58, o.w*0.12, o.h*0.12);
-  ctx.fillRect(o.x + o.w*0.86, o.y + o.h*0.58, o.w*0.12, o.h*0.12);
+    // shadow
+    ctx.fillStyle = "rgba(0,0,0,.18)";
+    ctx.beginPath();
+    ctx.ellipse(x+w*0.5, ground.yRoadTop + 6, w*0.40, 7, 0, 0, Math.PI*2);
+    ctx.fill();
 
-  // headlight
-  ctx.fillStyle = night ? "rgba(255,255,170,.85)" : "rgba(255,255,170,.55)";
-  ctx.fillRect(o.x + o.w*0.92, o.y + o.h*0.48, o.w*0.06, o.h*0.10);
-}
+    if(ob.type==="car"){
+      // body
+      ctx.fillStyle = ob.color;
+      roundRect(ctx, x, y+6, w, h-6, 12, true);
+      // top cabin
+      ctx.fillStyle = "rgba(255,255,255,.18)";
+      roundRect(ctx, x+w*0.18, y, w*0.50, h*0.55, 10, true);
+      // windows
+      ctx.fillStyle = "rgba(0,0,0,.25)";
+      roundRect(ctx, x+w*0.22, y+6, w*0.18, h*0.28, 6, true);
+      roundRect(ctx, x+w*0.44, y+6, w*0.18, h*0.28, 6, true);
+      // wheels
+      ctx.fillStyle = "#151515";
+      ctx.beginPath(); ctx.arc(x+w*0.22, y+h, 12, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+w*0.78, y+h, 12, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.18)";
+      ctx.beginPath(); ctx.arc(x+w*0.22, y+h, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+w*0.78, y+h, 5, 0, Math.PI*2); ctx.fill();
+      return;
+    }
 
-function drawCone(o){
-  ctx.fillStyle = "#ff8c00";
-  ctx.beginPath();
-  ctx.moveTo(o.x + o.w/2, o.y);
-  ctx.lineTo(o.x + o.w, o.y + o.h);
-  ctx.lineTo(o.x, o.y + o.h);
-  ctx.closePath();
-  ctx.fill();
+    if(ob.type==="cone"){
+      // cone
+      ctx.fillStyle = ob.color;
+      ctx.beginPath();
+      ctx.moveTo(x+w/2, y);
+      ctx.lineTo(x+w, y+h);
+      ctx.lineTo(x, y+h);
+      ctx.closePath();
+      ctx.fill();
+      // stripe
+      ctx.fillStyle = "rgba(255,255,255,.75)";
+      ctx.fillRect(x+w*0.18, y+h*0.55, w*0.64, 8);
+      return;
+    }
 
-  ctx.fillStyle = "rgba(255,255,255,.85)";
-  ctx.fillRect(o.x + o.w*0.2, o.y + o.h*0.55, o.w*0.6, 6);
-}
+    if(ob.type==="barrier"){
+      // barrier base
+      ctx.fillStyle = "rgba(0,0,0,.20)";
+      roundRect(ctx, x, y+6, w, h-6, 10, true);
+      // stripes
+      const stripes = 6;
+      for(let i=0;i<stripes;i++){
+        ctx.fillStyle = (i%2===0) ? "#ffffff" : ob.color;
+        ctx.fillRect(x + (w/stripes)*i, y+10, w/stripes, h-16);
+      }
+      // legs
+      ctx.fillStyle = "#111";
+      ctx.fillRect(x+8, y+h-6, 10, 18);
+      ctx.fillRect(x+w-18, y+h-6, 10, 18);
+      return;
+    }
 
-/* =========================
-   GAME LOOP
-========================= */
-function pause(){
-  if(state!=="playing") return;
-  setState("paused");
-}
-function resume(){
-  if(state!=="paused") return;
-  setState("playing");
-}
-function quitToMenu(){
-  setState("menu");
-  refreshMenuStats();
-}
+    if(ob.type==="hole"){
+      // hole in road
+      ctx.fillStyle = "#0c0c0f";
+      roundRect(ctx, x, y, w, h, 10, true);
+      ctx.strokeStyle = "rgba(255,255,255,.18)";
+      ctx.lineWidth = 2;
+      roundRect(ctx, x+2, y+2, w-4, h-4, 8, false);
+      return;
+    }
 
-function gameOver(){
-  setState("over");
-  addScore(score, timeAlive);
-  const b = bestStats();
+    // fallback
+    ctx.fillStyle="#ff4d6d";
+    ctx.fillRect(x,y,w,h);
+  }
 
-  ui.overScore.textContent = `Score: ${score}`;
-  ui.overTime.textContent = `Time: ${timeAlive.toFixed(1)}s`;
-  ui.overBest.textContent = `Best score: ${b.bestScore}`;
-  ui.overBestTime.textContent = `Best time: ${b.bestTime.toFixed(1)}s`;
-}
+  function drawUI(){
+    ui.hudScore.textContent = score;
+    ui.hudTime.textContent = `${timeSurvived.toFixed(1)}s`;
+    const night = isNight();
+    ui.dayNightText.textContent = night ? "NIGHT" : "DAY";
+    ui.menuDayNight.textContent = night ? "NIGHT" : "DAY";
+  }
 
-function update(dt){
-  groundY = Math.floor(H*CFG.groundYRatio);
+  // ===== Physics & Update =====
+  function update(dt){
+    updateGround();
+    cycleT += dt;
 
-  // UI day/night badge
-  const night = isNight();
-  ui.badgeMode.textContent = night ? "NIGHT" : "DAY";
+    // speed ramp (smooth)
+    speed = world.baseSpeed + Math.min(520, timeSurvived * 6);
 
-  if(state==="playing"){
-    timeAlive += dt;
-    speed = CFG.baseSpeed + timeAlive*CFG.speedIncrease;
+    // spawn obstacles
+    spawnTimer -= dt;
+    if(spawnTimer <= 0){
+      spawnObstacle();
+      // adaptive spawn rate
+      const base = 1.05;
+      const min = 0.62;
+      const t = clamp(timeSurvived / 80, 0, 1);
+      spawnTimer = base - t*(base-min) + rand(-0.10, 0.10);
+    }
 
-    // background scroll
-    bgOffset += speed*dt*0.35;
+    // player coyote/buffer
+    if(player.onGround){
+      player.coyoteT = world.coyote;
+    }else{
+      player.coyoteT -= dt;
+    }
+    player.jumpBufT -= dt;
 
-    // player physics
-    player.vy += CFG.gravity * dt;
+    // jump if buffered and allowed
+    if(player.jumpBufT > 0 && player.coyoteT > 0){
+      player.vy = -world.jumpV;
+      player.onGround = false;
+      player.coyoteT = 0;
+      player.jumpBufT = 0;
+    }
+
+    // gravity
+    player.vy += world.gravity * dt;
     player.y += player.vy * dt;
 
     // ground collision
-    const floor = groundY - player.h;
-    if(player.y >= floor){
-      player.y = floor;
+    const groundY = ground.yRoadTop - player.h;
+    if(player.y >= groundY){
+      player.y = groundY;
       player.vy = 0;
       player.onGround = true;
+    }else{
+      player.onGround = false;
     }
 
-    // run animation
-    player.runPhase += dt * 12;
-    if(!player.onGround) player.runPhase += dt * 6;
-
-    // spawns
-    spawnTimer += dt;
-    if(spawnTimer >= nextSpawn){
-      spawnTimer = 0;
-      nextSpawn = rand(CFG.spawnMin, CFG.spawnMax) * Math.max(0.72, 1.1 - timeAlive*0.01);
-      spawnObstacle();
+    // move obstacles
+    for(const ob of obstacles){
+      ob.x -= speed * dt;
+    }
+    // remove offscreen
+    while(obstacles.length && obstacles[0].x + obstacles[0].w < -200){
+      obstacles.shift();
+      score += 1;
     }
 
-    // move obstacles + collision + scoring
-    for(let i=obstacles.length-1; i>=0; i--){
-      const o = obstacles[i];
-      o.x -= speed*dt*o.speedMul;
-
-      // scoring when passed
-      if(!o.passed && o.x + o.w < player.x){
-        o.passed = true;
-        score += (o.type==="car") ? 2 : 1;
+    // collision
+    const pbox = { x: player.x+10, y: player.y+10, w: player.w-20, h: player.h-18 };
+    for(const ob of obstacles){
+      let obox = { x: ob.x, y: ob.y, w: ob.w, h: ob.h };
+      if(ob.type === "hole"){
+        // hole kills if player's feet are above it while landing
+        // easier: treat as thin deadly rect
+        obox = { x: ob.x+4, y: ob.y+2, w: ob.w-8, h: ob.h-2 };
       }
-
-      // collision
-      const px = player.x + 10;
-      const py = player.y + 12;
-      const pw = player.w - 20;
-      const ph = player.h - 10;
-
-      const ox = o.x + 4;
-      const oy = o.y + 4;
-      const ow = o.w - 8;
-      const oh = o.h - 6;
-
-      if(aabb(px,py,pw,ph, ox,oy,ow,oh)){
+      if(rectsOverlap(pbox, obox)){
         gameOver();
         break;
       }
-
-      // cleanup
-      if(o.x + o.w < -120){
-        obstacles.splice(i,1);
-      }
     }
 
-    updateHud();
-  } else {
-    // menu background subtle scroll
-    bgOffset += dt * 40;
-  }
-}
-
-function draw(){
-  const night = isNight();
-
-  drawSky(night);
-  if(night) drawStars();
-  drawSunMoon(night);
-
-  // clouds in day
-  if(!night){
-    const cOff = (bgOffset*0.18) % (W+400);
-    drawCloud(W*0.12 - cOff*0.4, 90, 1.05);
-    drawCloud(W*0.48 - cOff*0.55, 130, 0.95);
-    drawCloud(W*0.76 - cOff*0.7, 95, 1.10);
+    // time & UI
+    timeSurvived += dt;
+    drawUI();
   }
 
-  // world
-  drawBuildings(night);
-  drawGround(night);
+  function render(){
+    // background canvas
+    drawBackground();
 
-  // obstacles
-  for(const o of obstacles){
-    if(o.type==="car") drawCar(o, night);
-    else drawCone(o);
+    // game canvas
+    clear();
+    drawGround();
+    // IMPORTANT: buildings are on BG canvas ONLY -> never over player
+    // obstacles
+    for(const ob of obstacles) drawObstacle(ob);
+    // player
+    drawPlayer();
   }
 
-  // player
-  drawPlayer(night);
+  // ===== Main Loop =====
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.033, (now-last)/1000);
+    last = now;
 
-  // slight top shade for HUD readability
-  ctx.fillStyle = "rgba(0,0,0,.08)";
-  ctx.fillRect(0,0,W,90);
-}
+    if(state === "play"){
+      update(dt);
+      render();
+    } else {
+      // still animate background on menu/pause/over for style
+      cycleT += dt;
+      drawBackground();
+      clear();
+      drawGround();
+      for(const ob of obstacles) drawObstacle(ob);
+      drawPlayer();
+      drawUI();
+    }
 
-function loop(now){
-  const dt = Math.min(0.033, (now - last)/1000);
-  last = now;
-  t += dt;
-
-  update(dt);
-  draw();
-
+    requestAnimationFrame(loop);
+  }
   requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
 
-/* =========================
-   UI EVENTS
-========================= */
-ui.btnPlay.addEventListener("click", ()=>{
-  setState("playing");
-  resetGame();
-});
+  // ===== Wire menu open/close pauses =====
+  // Close modals on mask click (not inside modal)
+  ui.maskLB.addEventListener("click", (e)=>{ if(e.target===ui.maskLB) ui.maskLB.style.display="none"; });
+  ui.maskCredits.addEventListener("click", (e)=>{ if(e.target===ui.maskCredits) ui.maskCredits.style.display="none"; });
+  ui.maskPause.addEventListener("click", (e)=>{ if(e.target===ui.maskPause) resumeGame(); });
+  ui.maskGameOver.addEventListener("click", (e)=>{ /* do nothing */ });
 
-ui.btnCredits.addEventListener("click", ()=>{
-  ui.overlayCredits.classList.add("show");
-});
-ui.btnCloseCredits.addEventListener("click", ()=>{
-  ui.overlayCredits.classList.remove("show");
-});
+  // Start in menu
+  showMenu();
 
-ui.btnLeaderboard.addEventListener("click", ()=>{
-  renderBoard();
-  ui.overlayBoard.classList.add("show");
-});
-ui.btnCloseBoard.addEventListener("click", ()=>{
-  ui.overlayBoard.classList.remove("show");
-});
-ui.btnResetBoard.addEventListener("click", ()=>{
-  localStorage.removeItem(LS_KEY);
-  renderBoard();
-  refreshMenuStats();
-});
-
-ui.btnPause.addEventListener("click", pause);
-ui.btnQuit.addEventListener("click", quitToMenu);
-
-ui.btnResume.addEventListener("click", resume);
-ui.btnQuit2.addEventListener("click", quitToMenu);
-
-ui.btnAgain.addEventListener("click", ()=>{
-  setState("playing");
-  resetGame();
-});
-ui.btnBackMenu.addEventListener("click", quitToMenu);
-
-// close overlays by click outside panel
-[ui.overlayCredits, ui.overlayBoard].forEach(ov=>{
-  ov.addEventListener("click",(e)=>{
-    if(e.target === ov) ov.classList.remove("show");
-  });
-});
-ui.overlayPause.addEventListener("click",(e)=>{
-  if(e.target === ui.overlayPause) resume();
-});
-ui.overlayOver.addEventListener("click",(e)=>{
-  if(e.target === ui.overlayOver) quitToMenu();
-});
-
-/* =========================
-   LOADING SCREEN (fake)
-========================= */
-(function fakeLoading(){
-  setState("loading");
-  let p = 0;
-  const iv = setInterval(()=>{
-    p += Math.random()*12;
-    if(p>=100) p=100;
-    ui.loadBar.style.width = p.toFixed(0)+"%";
-    ui.loadText.textContent = p.toFixed(0)+"%";
-    if(p>=100){
-      clearInterval(iv);
-      setTimeout(()=>{
-        setState("menu");
-        refreshMenuStats();
-      }, 250);
-    }
-  }, 80);
-})();
-
-/* =========================
-   INITIAL HUD
-========================= */
-(function init(){
-  groundY = Math.floor(H*CFG.groundYRatio);
-  player.y = groundY - player.h;
-  refreshMenuStats();
 })();
 </script>
 </body>
