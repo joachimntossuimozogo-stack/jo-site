@@ -1,66 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>NEON RUNNER</title>
+<title>City Dash</title>
 <style>
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: Arial;
-  background: #0f0f1f;
-}
-
-canvas {
-  display: none;
-  background: linear-gradient(#14142b, #1e1e40);
-}
-
+body { margin:0; overflow:hidden; font-family:Arial; }
+canvas { display:none; }
 #menu {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(45deg, #14142b, #1e1e40);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: white;
+  position:absolute;
+  width:100%;
+  height:100%;
+  background:linear-gradient(#4ec0ff,#87e0ff);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
 }
-
-h1 {
-  font-size: 60px;
-  color: cyan;
-  text-shadow: 0 0 20px cyan;
-}
-
+h1 { font-size:60px; color:#222; }
 button {
-  padding: 15px 40px;
-  margin: 10px;
-  font-size: 20px;
-  border: none;
-  border-radius: 10px;
-  background: cyan;
-  color: black;
-  cursor: pointer;
+  padding:15px 40px;
+  margin:10px;
+  font-size:20px;
+  border:none;
+  border-radius:10px;
+  background:#222;
+  color:white;
+  cursor:pointer;
 }
-
-button:hover {
-  background: #00bfff;
-}
-
-#creditsBox {
-  display: none;
-  margin-top: 20px;
-  font-size: 20px;
-}
+button:hover { background:#444; }
+#creditsBox { display:none; margin-top:15px; font-size:18px; }
 </style>
 </head>
 <body>
 
 <div id="menu">
-  <h1>NEON RUNNER</h1>
+  <h1>🌆 CITY DASH</h1>
   <button onclick="startGame()">PLAY</button>
-  <button onclick="showCredits()">CREDITS</button>
+  <button onclick="toggleCredits()">CREDITS</button>
   <div id="creditsBox">Dev: @ItsJojoKario</div>
 </div>
 
@@ -73,99 +48,131 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+let gravity = 1.2;
+let speed = 8;
+let score = 0;
+let gameRunning = false;
+
 let player = {
-  x: 100,
-  y: canvas.height - 150,
+  x: 150,
+  y: canvas.height - 200,
   width: 50,
-  height: 50,
+  height: 100,
   dy: 0,
-  jumpForce: 20,
-  gravity: 1.2,
   grounded: true
 };
 
 let obstacles = [];
-let score = 0;
-let gameRunning = false;
 
-function showCredits() {
+function toggleCredits(){
   const box = document.getElementById("creditsBox");
-  box.style.display = box.style.display === "none" ? "block" : "none";
+  box.style.display = box.style.display==="none"?"block":"none";
 }
 
-function startGame() {
-  document.getElementById("menu").style.display = "none";
-  canvas.style.display = "block";
+function startGame(){
+  document.getElementById("menu").style.display="none";
+  canvas.style.display="block";
   gameRunning = true;
   spawnObstacle();
   gameLoop();
 }
 
-function spawnObstacle() {
-  setInterval(() => {
+function spawnObstacle(){
+  setInterval(()=>{
     obstacles.push({
       x: canvas.width,
-      y: canvas.height - 100,
-      width: 40,
+      y: canvas.height - 140,
+      width: 60,
       height: 60
     });
-  }, 2000);
+  },2000);
 }
 
-document.addEventListener("keydown", e => {
-  if (e.code === "Space" && player.grounded) {
-    player.dy = -player.jumpForce;
-    player.grounded = false;
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space" && player.grounded){
+    player.dy = -20;
+    player.grounded=false;
   }
 });
 
-function update() {
-  player.dy += player.gravity;
+function update(){
+  player.dy += gravity;
   player.y += player.dy;
 
-  if (player.y >= canvas.height - 150) {
-    player.y = canvas.height - 150;
+  if(player.y >= canvas.height - 200){
+    player.y = canvas.height - 200;
     player.grounded = true;
   }
 
-  obstacles.forEach((obs, index) => {
-    obs.x -= 8;
+  obstacles.forEach((obs,index)=>{
+    obs.x -= speed;
 
-    if (
+    // collision réelle
+    if(
       player.x < obs.x + obs.width &&
       player.x + player.width > obs.x &&
       player.y < obs.y + obs.height &&
       player.y + player.height > obs.y
-    ) {
-      alert("GAME OVER\nScore: " + score);
+    ){
+      alert("GAME OVER\nScore: "+score);
       location.reload();
     }
 
-    if (obs.x + obs.width < 0) {
-      obstacles.splice(index, 1);
+    if(obs.x + obs.width < 0){
+      obstacles.splice(index,1);
       score++;
+      speed += 0.2; // vitesse augmente
     }
   });
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function drawBackground(){
+  // ciel
+  ctx.fillStyle="#87CEEB";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  ctx.fillStyle = "#00ffff";
-  ctx.fillRect(player.x, player.y, player.width, player.height);
+  // ville
+  ctx.fillStyle="#555";
+  for(let i=0;i<canvas.width;i+=200){
+    ctx.fillRect(i,canvas.height-300,150,200);
+  }
 
-  ctx.fillStyle = "#ff0040";
-  obstacles.forEach(obs => {
-    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-  });
-
-  ctx.fillStyle = "white";
-  ctx.font = "30px Arial";
-  ctx.fillText("Score: " + score, 20, 50);
+  // sol
+  ctx.fillStyle="#228B22";
+  ctx.fillRect(0,canvas.height-100,canvas.width,100);
 }
 
-function gameLoop() {
-  if (!gameRunning) return;
+function drawPlayer(){
+  // corps
+  ctx.fillStyle="black";
+  ctx.fillRect(player.x,player.y,player.width,player.height);
+
+  // tête
+  ctx.beginPath();
+  ctx.arc(player.x+25,player.y-20,20,0,Math.PI*2);
+  ctx.fill();
+
+  // jambes
+  ctx.fillRect(player.x+5,player.y+100,15,40);
+  ctx.fillRect(player.x+30,player.y+100,15,40);
+}
+
+function draw(){
+  drawBackground();
+  drawPlayer();
+
+  ctx.fillStyle="brown";
+  obstacles.forEach(obs=>{
+    ctx.fillRect(obs.x,obs.y,obs.width,obs.height);
+  });
+
+  ctx.fillStyle="black";
+  ctx.font="30px Arial";
+  ctx.fillText("Score: "+score,20,50);
+}
+
+function gameLoop(){
+  if(!gameRunning)return;
   update();
   draw();
   requestAnimationFrame(gameLoop);
