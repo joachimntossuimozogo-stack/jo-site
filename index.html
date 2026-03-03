@@ -3,392 +3,226 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>City Sprint (PS1 Mode)</title>
+  <title>City Sprint — Minigame</title>
   <style>
     :root{
-      --bg1:#0a0f1a;
-      --bg2:#0c1322;
-      --ink:#e9f1ff;
-      --muted:#a6b3cc;
-      --accent:#35ffd1;
-      --accent2:#7c5cff;
-      --danger:#ff3b4a;
-      --panel: rgba(6,10,18,.72);
-      --panel2: rgba(12,18,30,.62);
-      --border: rgba(255,255,255,.12);
+      --ink:#e8e8e8;
+      --ink2:#bfbfbf;
+      --bg:#050508;
+      --panel:#0a0a0f;
+      --panel2:#10101a;
+      --border:#2a2a3a;
+      --accent:#ffffff;
+      --danger:#ff4b55;
     }
 
-    html,body{height:100%;margin:0;background:#050812;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    body{
-      overflow:hidden;
-      user-select:none;
-      -webkit-user-select:none;
-      touch-action:manipulation;
-    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+    body{overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:manipulation;}
 
-    /* Pixel canvas fullscreen */
-    #wrap{
-      position:fixed; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      background: radial-gradient(1200px 700px at 50% 30%, #0b1430 0%, #050812 60%, #03040a 100%);
-    }
+    #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000;}
+    canvas{width:100vw; height:100vh; image-rendering: pixelated; image-rendering: crisp-edges;}
 
-    canvas{
-      width:100vw; height:100vh;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
-
-    /* CRT overlay */
-    #crt{
-      pointer-events:none;
-      position:fixed; inset:0;
+    /* FNAF-ish scanlines + vignette */
+    #scan{
+      pointer-events:none; position:fixed; inset:0;
       background:
-        linear-gradient(rgba(255,255,255,.04), rgba(0,0,0,.05)),
-        repeating-linear-gradient(0deg, rgba(0,0,0,.0), rgba(0,0,0,.0) 2px, rgba(0,0,0,.12) 3px);
-      mix-blend-mode: overlay;
-      opacity:.55;
-      filter: contrast(1.08) saturate(1.06);
-    }
-    #vignette{
-      pointer-events:none;
-      position:fixed; inset:-2px;
-      background: radial-gradient(closest-side at 50% 45%, rgba(0,0,0,0) 0%, rgba(0,0,0,.12) 62%, rgba(0,0,0,.55) 100%);
-      opacity:.9;
+        repeating-linear-gradient(0deg, rgba(0,0,0,0), rgba(0,0,0,0) 2px, rgba(0,0,0,.22) 3px),
+        radial-gradient(closest-side at 50% 45%, rgba(0,0,0,0) 0%, rgba(0,0,0,.20) 62%, rgba(0,0,0,.75) 100%);
+      opacity:.75;
+      mix-blend-mode:multiply;
     }
     #noise{
-      pointer-events:none;
-      position:fixed; inset:0;
-      opacity:.08;
+      pointer-events:none; position:fixed; inset:0;
+      opacity:.10;
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
-      background-size:240px 240px;
-      mix-blend-mode: overlay;
+      background-size:220px 220px;
+      mix-blend-mode:overlay;
     }
 
-    /* UI layer */
-    #ui{
-      position:fixed; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      padding:24px;
-    }
-
+    /* UI — pixel box style */
+    #ui{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:18px;}
     .panel{
-      width:min(860px,92vw);
-      border-radius:20px;
-      background: linear-gradient(180deg, rgba(10,14,28,.86), rgba(6,10,18,.74));
-      border:1px solid var(--border);
-      box-shadow:
-        0 30px 100px rgba(0,0,0,.55),
-        inset 0 1px 0 rgba(255,255,255,.08);
-      backdrop-filter: blur(10px);
-      padding:22px;
-      position:relative;
-      overflow:hidden;
+      width:min(760px,94vw);
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border:2px solid var(--border);
+      box-shadow: 0 0 0 2px rgba(0,0,0,.8), 0 18px 0 rgba(0,0,0,.35);
+      padding:14px;
     }
-    .panel:before{
-      content:"";
-      position:absolute; inset:-80px;
-      background: radial-gradient(600px 240px at 20% 10%, rgba(53,255,209,.16), rgba(0,0,0,0) 60%),
-                  radial-gradient(500px 220px at 90% 0%, rgba(124,92,255,.18), rgba(0,0,0,0) 60%);
-      opacity:.9;
-      filter: blur(2px);
-    }
-    .panel > *{position:relative; z-index:1;}
+    .title{font-size:26px; font-weight:900; letter-spacing:1px; text-transform:uppercase;}
+    .sub{color:var(--ink2); font-size:12px; margin-top:6px; line-height:1.3;}
+    .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
 
-    .toprow{
-      display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
-      margin-bottom:14px;
-    }
-    .title{
-      font-weight:900;
-      letter-spacing:.4px;
-      font-size:38px;
-      line-height:1.05;
-    }
-    .tag{
-      display:inline-flex; gap:8px; align-items:center;
-      font-size:12px;
-      padding:6px 10px;
-      border:1px solid var(--border);
-      border-radius:999px;
-      color:var(--muted);
-      background: rgba(0,0,0,.18);
-      margin-left:10px;
-      transform: translateY(-4px);
-    }
-    .desc{
-      color:var(--muted);
-      margin-top:6px;
-      font-size:14px;
-      max-width:62ch;
-    }
-
-    .row{
-      display:flex; gap:12px; flex-wrap:wrap;
-      margin:14px 0 8px;
-    }
     .btn{
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.2);
-      color:var(--ink);
-      padding:10px 14px;
-      border-radius:14px;
       cursor:pointer;
-      font-weight:800;
-      display:inline-flex;
-      gap:10px;
-      align-items:center;
-      transition:.15s transform, .15s filter, .15s background;
+      border:2px solid var(--border);
+      background:#0b0b12;
+      color:var(--ink);
+      padding:10px 12px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      font-weight:900;
+      box-shadow: 0 6px 0 rgba(0,0,0,.45);
     }
-    .btn:hover{transform: translateY(-1px); filter: brightness(1.08);}
-    .btn:active{transform: translateY(0px) scale(.99);}
-    .btn.primary{
-      background: linear-gradient(180deg, rgba(53,255,209,.18), rgba(0,0,0,.22));
-      border-color: rgba(53,255,209,.35);
-      color:#dbfff6;
-    }
-    .btn.danger{
-      background: linear-gradient(180deg, rgba(255,59,74,.16), rgba(0,0,0,.22));
-      border-color: rgba(255,59,74,.35);
-      color:#ffe5e8;
-    }
+    .btn:hover{filter:brightness(1.08);}
+    .btn:active{transform: translateY(2px); box-shadow: 0 4px 0 rgba(0,0,0,.45);}
+    .btn.primary{border-color:#6a6a86;}
+    .btn.danger{border-color:#7a2b33; color:#ffd9dc;}
 
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      margin-top:12px;
-    }
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
     .card{
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.18);
-      border-radius:16px;
-      padding:12px 14px;
+      border:2px solid var(--border);
+      background:#0a0a10;
+      padding:10px;
     }
-    .card h3{
-      margin:0 0 6px;
-      font-size:13px;
-      color:#d7e6ff;
-      letter-spacing:.2px;
-    }
-    .card p{
-      margin:0;
-      font-size:13px;
-      color:var(--muted);
-      line-height:1.35;
-      white-space:pre-line;
-    }
+    .card h3{margin:0 0 6px; font-size:12px; letter-spacing:1px; text-transform:uppercase;}
+    .card pre{margin:0; color:var(--ink2); font-size:12px; white-space:pre-wrap; line-height:1.25;}
 
     .hidden{display:none !important;}
 
-    /* In-game HUD */
+    /* HUD (in game) */
     #hud{
-      position:fixed; inset:0;
-      pointer-events:none;
-      padding:14px;
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      color:#eaf2ff;
-      text-shadow:0 2px 0 rgba(0,0,0,.25);
+      position:fixed; inset:0; pointer-events:none;
+      padding:10px;
+      display:flex; gap:10px; align-items:flex-start; justify-content:flex-start;
     }
-    #hud .pill{
-      pointer-events:none;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.22);
-      border-radius:14px;
-      padding:10px 12px;
-      min-width:160px;
-      backdrop-filter: blur(6px);
+    .hudBox{
+      background:#0a0a10;
+      border:2px solid var(--border);
+      padding:8px 10px;
+      box-shadow: 0 6px 0 rgba(0,0,0,.35);
+      min-width:130px;
     }
-    #hud .pill b{display:block; font-size:12px; opacity:.9}
-    #hud .pill span{font-size:18px; font-weight:900; letter-spacing:.3px}
+    .hudBox b{display:block; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--ink2);}
+    .hudBox span{display:block; font-size:18px; font-weight:900; letter-spacing:1px;}
 
-    /* Pause overlay */
-    #pauseOverlay{
-      position:fixed; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      background: rgba(0,0,0,.35);
-      backdrop-filter: blur(4px);
-    }
-    #pauseOverlay .panel{width:min(560px,92vw)}
-    .small{font-size:12px;color:var(--muted);margin-top:8px}
-
-    /* Mobile jump button */
     #mobileJump{
-      position:fixed;
-      right:18px;
-      bottom:18px;
-      width:76px; height:76px;
-      border-radius:20px;
-      border:1px solid rgba(53,255,209,.38);
-      background: linear-gradient(180deg, rgba(53,255,209,.20), rgba(0,0,0,.28));
-      box-shadow: 0 16px 50px rgba(0,0,0,.4);
+      position:fixed; right:14px; bottom:14px;
+      width:84px; height:84px;
+      background:#0a0a10;
+      border:2px solid var(--border);
       display:none;
-      align-items:center;
-      justify-content:center;
-      font-weight:1000;
-      color:#dbfff6;
+      align-items:center; justify-content:center;
+      font-weight:900; letter-spacing:1px;
+      box-shadow: 0 10px 0 rgba(0,0,0,.4);
       cursor:pointer;
-      user-select:none;
     }
-
-    @media (max-width: 820px){
-      .grid{grid-template-columns:1fr}
-      .title{font-size:32px}
-      #mobileJump{display:flex;}
-    }
+    @media (max-width:820px){ .grid{grid-template-columns:1fr} #mobileJump{display:flex;} }
   </style>
 </head>
 
 <body>
-  <div id="wrap">
-    <canvas id="c"></canvas>
-  </div>
-  <div id="crt"></div>
+  <div id="wrap"><canvas id="c"></canvas></div>
+  <div id="scan"></div>
   <div id="noise"></div>
-  <div id="vignette"></div>
 
   <!-- HUD -->
   <div id="hud" class="hidden">
-    <div class="pill">
-      <b>Score</b>
-      <span id="hudScore">0</span>
-    </div>
-    <div class="pill">
-      <b>Temps</b>
-      <span id="hudTime">0.0s</span>
-    </div>
-    <div class="pill">
-      <b>Mode</b>
-      <span id="hudMode">DAY</span>
-    </div>
+    <div class="hudBox"><b>Score</b><span id="hudScore">0</span></div>
+    <div class="hudBox"><b>Time</b><span id="hudTime">0.0s</span></div>
+    <div class="hudBox"><b>Mode</b><span id="hudMode">DAY</span></div>
   </div>
 
   <div id="mobileJump">JUMP</div>
 
-  <!-- Main UI -->
+  <!-- UI -->
   <div id="ui">
     <div id="menu" class="panel">
-      <div class="toprow">
-        <div>
-          <div class="title">City Sprint <span class="tag"><span id="menuMode">DAY</span> • PS1</span></div>
-          <div class="desc">Runner 2D pixelisé : saute au-dessus des <b>voitures</b>, <b>poubelles</b> (elles tuent), cônes… Survis, score + temps.</div>
-        </div>
+      <div class="title">CITY SPRINT — MINIGAME</div>
+      <div class="sub">
+        Saute au-dessus des voitures et des poubelles (elles tuent).<br>
+        Style FNAF mini-game (pixels + scanlines). Jour/Nuit avec transition.
       </div>
 
       <div class="row">
-        <button class="btn primary" id="btnPlay">▶ Play</button>
-        <button class="btn" id="btnBoard">🏆 Leaderboard</button>
-        <button class="btn" id="btnCredits">ℹ Credits</button>
+        <button class="btn primary" id="btnPlay">PLAY</button>
+        <button class="btn" id="btnBoard">LEADERBOARD</button>
+        <button class="btn" id="btnCredits">CREDITS</button>
       </div>
 
       <div class="grid">
         <div class="card">
-          <h3>Contrôles</h3>
-          <p>Espace / ↑ / clic : sauter
+          <h3>CONTROLS</h3>
+          <pre>SPACE / ↑ / clic : jump
 ↓ : crouch
 P : pause
-Quit : bouton en jeu</p>
+ESC : pause
+QUIT : bouton pause</pre>
         </div>
         <div class="card">
-          <h3>Records (local)</h3>
-          <p id="recordsText">—</p>
+          <h3>LOCAL RECORDS</h3>
+          <pre id="recordsText">—</pre>
         </div>
       </div>
-
-      <div class="small">Astuce : sur mobile, bouton JUMP. Le jeu garde 1 meilleur score par pseudo (local).</div>
     </div>
 
     <div id="board" class="panel hidden">
-      <div class="toprow">
-        <div>
-          <div class="title">Leaderboard <span class="tag">LOCAL</span></div>
-          <div class="desc">Un seul score par pseudo (garde le meilleur). Pas “global monde” sans serveur.</div>
-        </div>
-        <button class="btn" id="btnBack1">← Retour</button>
+      <div class="title">LEADERBOARD (LOCAL)</div>
+      <div class="sub">1 score par pseudo → on garde le meilleur.</div>
+      <div class="card" style="margin-top:12px;">
+        <h3>TOP</h3>
+        <pre id="boardList">—</pre>
       </div>
-
-      <div class="card">
-        <h3>Top scores</h3>
-        <p id="boardList">—</p>
-      </div>
-
-      <div class="row" style="margin-top:12px;">
-        <button class="btn danger" id="btnResetLocal">🧨 Reset local</button>
+      <div class="row">
+        <button class="btn" id="btnBack1">BACK</button>
+        <button class="btn danger" id="btnResetLocal">RESET</button>
       </div>
     </div>
 
     <div id="credits" class="panel hidden">
-      <div class="toprow">
-        <div>
-          <div class="title">Credits</div>
-          <div class="desc">Dev : <b>@ItsJojoKario</b> • Made with HTML Canvas • Pixel PS1 vibe</div>
-        </div>
-        <button class="btn" id="btnBack2">← Retour</button>
+      <div class="title">CREDITS</div>
+      <div class="sub">DEV : @ItsJojoKario</div>
+      <div class="card" style="margin-top:12px;">
+        <h3>NOTES</h3>
+        <pre>Leaderboard global = besoin serveur (Firebase/Supabase).
+On peut ajouter sons + jumpscare UI FNAF.</pre>
       </div>
-
-      <div class="card">
-        <h3>Notes</h3>
-        <p>Tu veux un leaderboard global ? On branche Firebase / Supabase ensuite.
-Tu veux des skins ? Easy. Musique/sons ? Easy.</p>
+      <div class="row">
+        <button class="btn" id="btnBack2">BACK</button>
       </div>
     </div>
 
-    <div id="pauseOverlay" class="hidden">
-      <div class="panel">
-        <div class="toprow">
-          <div>
-            <div class="title">PAUSE</div>
-            <div class="desc">Reprends ou quitte la partie.</div>
-          </div>
-        </div>
-        <div class="row">
-          <button class="btn primary" id="btnResume">▶ Resume</button>
-          <button class="btn danger" id="btnQuit">⏏ Quit</button>
-        </div>
-        <div class="small">Raccourci : P</div>
+    <div id="pauseOverlay" class="panel hidden" style="width:min(520px,94vw);">
+      <div class="title">PAUSE</div>
+      <div class="sub">Resume ou Quit.</div>
+      <div class="row">
+        <button class="btn primary" id="btnResume">RESUME</button>
+        <button class="btn danger" id="btnQuit">QUIT</button>
       </div>
     </div>
   </div>
 
   <script>
     /**********************
-     * CITY SPRINT PS1
-     * - Pixel render (low res -> upscale)
-     * - Obstacles: trash bins (kill), cars, cones
-     * - Day/Night cycle
-     * - Local leaderboard (best per name)
+     * City Sprint — FNAF Minigame Edition
+     * Fixes:
+     * - Buildings no longer float (base aligned)
+     * - Windows are generated once per building (no movement/flicker)
+     * - Day/Night transition animation (fade + VHS flash)
      **********************/
 
-    // --- Canvas setup (internal low resolution for pixel look)
+    // Canvas low-res for chunkier pixels (more FNAF minigame)
     const canvas = document.getElementById("c");
-    const ctx = canvas.getContext("2d", { alpha: false });
+    const ctx = canvas.getContext("2d", { alpha:false });
 
-    const BASE_W = 360;      // internal resolution (pixel-ish)
-    const BASE_H = 202;      // 16:9-ish
+    const BASE_W = 280;
+    const BASE_H = 158;
     let scale = 1;
 
     function resize(){
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      // Fit BASE into screen
-      scale = Math.max(1, Math.floor(Math.min(w/BASE_W, h/BASE_H)));
-      canvas.width  = BASE_W * scale;
+      const w = window.innerWidth, h = window.innerHeight;
+      scale = Math.max(2, Math.floor(Math.min(w/BASE_W, h/BASE_H)));
+      canvas.width = BASE_W * scale;
       canvas.height = BASE_H * scale;
-      // Disable smoothing for crisp pixels
       ctx.imageSmoothingEnabled = false;
     }
     window.addEventListener("resize", resize);
     resize();
 
-    // --- UI refs
+    // UI refs
     const hud = document.getElementById("hud");
     const hudScore = document.getElementById("hudScore");
     const hudTime = document.getElementById("hudTime");
     const hudMode = document.getElementById("hudMode");
-    const menuMode = document.getElementById("menuMode");
 
     const menu = document.getElementById("menu");
     const board = document.getElementById("board");
@@ -408,192 +242,213 @@ Tu veux des skins ? Easy. Musique/sons ? Easy.</p>
     const recordsText = document.getElementById("recordsText");
     const boardList = document.getElementById("boardList");
 
-    // --- Game state
-    const GROUND_Y = 168;
-    const GRASS_Y = 178;
+    // World
+    const GROUND_Y = 124;   // road top
+    const ROAD_H = 16;
+    const GRASS_Y = GROUND_Y + ROAD_H;
 
-    let running = false;
-    let paused = false;
-    let timeAlive = 0;
-    let score = 0;
+    // Game state
+    let running=false, paused=false;
+    let timeAlive=0, score=0;
 
-    // Day/Night cycle (seconds)
+    // Day/night cycle + transition animation
     const DAY_LEN = 60;
     const NIGHT_LEN = 45;
+    let currentMode = "DAY";
+    let transitionT = 1;      // 0..1
+    let transitionFlash = 0;  // little VHS flash on swap
 
-    function getCycleMode(t){
-      // Day then night then loop
+    function getModeAt(t){
       const cycle = DAY_LEN + NIGHT_LEN;
       const x = t % cycle;
       return x < DAY_LEN ? "DAY" : "NIGHT";
     }
+    function smoothstep(x){
+      x = Math.max(0, Math.min(1, x));
+      return x*x*(3-2*x);
+    }
 
-    // --- Player (simple pixel character + run animation)
-    const player = {
-      x: 54,
-      y: GROUND_Y,
-      w: 16,
-      h: 34,
-      vy: 0,
-      onGround: true,
-      crouch: false,
-      dead: false,
-      animT: 0
-    };
-
-    const GRAV = 1200;          // px/s^2 in internal space (scaled by dt)
-    const JUMP_V = -420;        // jump velocity
-    const JUMP_V_STRONG = -470; // for mobile tap (slightly)
-    const FLOOR = GROUND_Y;
-
-    // --- Obstacles
-    const obstacles = [];
-    let spawnTimer = 0;
-
+    // RNG helpers
     function rand(a,b){ return a + Math.random()*(b-a); }
     function randi(a,b){ return Math.floor(rand(a,b+1)); }
 
-    const obstacleTypes = {
-      TRASH: { key:"TRASH", w: 14, h: 18, kill:true },
-      CAR:   { key:"CAR",   w: 28, h: 14, kill:true },
-      CONE:  { key:"CONE",  w: 10, h: 12, kill:true },
+    // Pixel draw helpers
+    function rect(x,y,w,h,color){
+      ctx.fillStyle=color;
+      ctx.fillRect(x*scale, y*scale, w*scale, h*scale);
+    }
+    function txt(x,y,s,size,color,align="left"){
+      ctx.fillStyle=color;
+      ctx.font = `${Math.floor(size*scale)}px ui-monospace, monospace`;
+      ctx.textAlign = align;
+      ctx.fillText(s, x*scale, y*scale);
+    }
+
+    // Player
+    const GRAV = 1200;
+    const JUMP_V = -420;
+    const FLOOR = GROUND_Y;
+    const player = {
+      x: 42, y: FLOOR, vy:0, onGround:true, crouch:false, dead:false, animT:0,
+      w: 14, h: 30
     };
-
-    function spawnObstacle(){
-      const mode = getCycleMode(timeAlive);
-      // Mix: cars + trash + cones
-      const pick = Math.random();
-      let type;
-      if(pick < 0.45) type = obstacleTypes.CAR;
-      else if(pick < 0.80) type = obstacleTypes.TRASH;
-      else type = obstacleTypes.CONE;
-
-      // speed increases over time
-      const baseSpeed = 140;
-      const speed = baseSpeed + Math.min(160, timeAlive*2.2);
-
-      obstacles.push({
-        type,
-        x: BASE_W + 20,
-        y: FLOOR,
-        w: type.w,
-        h: type.h,
-        speed,
-        // little random style variations
-        variant: randi(0, 3),
-      });
-    }
-
-    // --- Background city parallax
-    const buildings = [];
-    function initBuildings(){
-      buildings.length = 0;
-      let x = 0;
-      while(x < BASE_W + 120){
-        const w = randi(26, 60);
-        const h = randi(40, 92);
-        const layer = Math.random() < 0.5 ? 0 : 1; // 0 back, 1 front
-        buildings.push({
-          x, w, h,
-          layer,
-          // windows pattern
-          winCols: randi(3, 6),
-          winRows: randi(3, 10),
-          tone: randi(0, 2),
-        });
-        x += w + randi(8, 18);
-      }
-    }
-    initBuildings();
-
-    // --- Input
-    const keys = new Set();
-    window.addEventListener("keydown", (e)=>{
-      keys.add(e.code);
-      if(e.code === "KeyP"){
-        if(running) togglePause();
-      }
-      // prevent page scroll for arrows/space
-      if(["Space","ArrowUp","ArrowDown"].includes(e.code)) e.preventDefault();
-    }, {passive:false});
-    window.addEventListener("keyup", (e)=> keys.delete(e.code));
 
     function jump(strong=false){
       if(!running || paused || player.dead) return;
       if(player.onGround){
-        player.vy = strong ? JUMP_V_STRONG : JUMP_V;
+        player.vy = strong ? (JUMP_V - 35) : JUMP_V;
         player.onGround = false;
       }
     }
 
-    // mouse / touch jump
-    window.addEventListener("pointerdown", (e)=>{
-      // if clicking on UI, ignore
-      if(!running) return;
-      if(paused) return;
-      // allow jump anywhere
-      jump(true);
-    });
+    // Obstacles
+    const obstacles = [];
+    let spawnTimer=0;
 
-    mobileJump.addEventListener("pointerdown", (e)=>{
-      e.preventDefault();
-      jump(true);
-    });
+    const obstacleTypes = {
+      TRASH:{key:"TRASH", w:12, h:16},
+      CAR:{key:"CAR", w:26, h:13},
+      CONE:{key:"CONE", w:10, h:12},
+    };
 
-    // --- Local leaderboard (best per pseudo)
-    const LS_KEY = "citysprint_ps1_v1";
-    function loadData(){
-      try{
-        return JSON.parse(localStorage.getItem(LS_KEY) || "{}");
-      }catch{ return {}; }
+    function spawnObstacle(){
+      const pick = Math.random();
+      let type;
+      if(pick < 0.50) type = obstacleTypes.CAR;
+      else if(pick < 0.85) type = obstacleTypes.TRASH;
+      else type = obstacleTypes.CONE;
+
+      const baseSpeed = 140;
+      const speed = baseSpeed + Math.min(170, timeAlive*2.2);
+
+      obstacles.push({
+        type,
+        x: BASE_W + 18,
+        y: FLOOR,
+        w: type.w,
+        h: type.h,
+        speed,
+        variant: randi(0,3)
+      });
     }
-    function saveData(d){
-      localStorage.setItem(LS_KEY, JSON.stringify(d));
+
+    // City buildings (NO FLOAT + windows stable)
+    let buildingId = 1;
+    const buildings = [];
+
+    function makeWindows(w, h, seed){
+      // build stable window map
+      const cols = Math.max(3, Math.min(7, Math.floor(w/10)));
+      const rows = Math.max(3, Math.min(12, Math.floor(h/10)));
+      const map = [];
+      // deterministic pseudo-random based on seed
+      let s = seed >>> 0;
+      function prng(){
+        s = (s * 1664525 + 1013904223) >>> 0;
+        return (s / 4294967296);
+      }
+      for(let r=0;r<rows;r++){
+        const row = [];
+        for(let c=0;c<cols;c++){
+          // ~55% windows ON, but NOT uniform
+          row.push(prng() < 0.55);
+        }
+        map.push(row);
+      }
+      return {cols, rows, map};
     }
+
+    function addBuilding(x){
+      const w = randi(28, 62);
+      const h = randi(36, 96);
+
+      const tonePick = randi(0,2);
+      const tone = tonePick===0 ? "#20222c" : tonePick===1 ? "#272a35" : "#2d3140";
+      const tone2 = tonePick===0 ? "#141622" : tonePick===1 ? "#1b1e2a" : "#212636";
+
+      const id = buildingId++;
+      const seed = (id*98765) ^ (w<<8) ^ (h<<16);
+
+      buildings.push({
+        id, x, w, h,
+        baseY: GROUND_Y,   // <<< stick to ground always
+        layer: Math.random() < 0.55 ? 0 : 1, // parallax
+        tone, tone2,
+        win: makeWindows(w, h, seed),
+        // subtle depth
+        shadeW: randi(6, 14)
+      });
+    }
+
+    function initBuildings(){
+      buildings.length = 0;
+      let x = 0;
+      while(x < BASE_W + 140){
+        addBuilding(x);
+        x += buildings[buildings.length-1].w + randi(8,16);
+      }
+    }
+    initBuildings();
+
+    // Input
+    const keys = new Set();
+    window.addEventListener("keydown", (e)=>{
+      keys.add(e.code);
+      if(["Space","ArrowUp","ArrowDown"].includes(e.code)) e.preventDefault();
+
+      if(e.code==="KeyP" && running) togglePause();
+      if(e.code==="Escape" && running) togglePause();
+    }, {passive:false});
+    window.addEventListener("keyup", (e)=> keys.delete(e.code));
+
+    window.addEventListener("pointerdown", ()=>{
+      if(running && !paused) jump(true);
+    });
+    mobileJump.addEventListener("pointerdown", (e)=>{ e.preventDefault(); jump(true); });
+
+    // Local leaderboard
+    const LS_KEY = "citysprint_fnaf_local_v2";
+    function loadData(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||"{}");}catch{return{};} }
+    function saveData(d){ localStorage.setItem(LS_KEY, JSON.stringify(d)); }
+
     function getPlayerName(){
-      let d = loadData();
+      const d = loadData();
       if(!d.name){
-        const n = prompt("Ton pseudo ? (1 seul meilleur score sauvegardé)", "Jo") || "Player";
+        const n = prompt("Pseudo (1 meilleur score sauvegardé)", "Jo") || "Player";
         d.name = n.slice(0,16);
         saveData(d);
       }
       return d.name;
     }
+
     function pushBest(scoreValue, timeValue){
       const d = loadData();
       const name = d.name || "Player";
-      d.scores = d.scores || {}; // map name -> {bestScore,bestTime}
-      const prev = d.scores[name] || { bestScore:0, bestTime:0 };
-      // best score priority, then best time
+      d.scores = d.scores || {};
+      const prev = d.scores[name] || {bestScore:0, bestTime:0};
+
       if(scoreValue > prev.bestScore || (scoreValue === prev.bestScore && timeValue > prev.bestTime)){
-        d.scores[name] = { bestScore: scoreValue, bestTime: timeValue };
+        d.scores[name] = {bestScore: scoreValue, bestTime: timeValue};
       }
-      // global record for menu
       d.bestScore = Math.max(d.bestScore||0, d.scores[name].bestScore);
       d.bestTime = Math.max(d.bestTime||0, d.scores[name].bestTime);
       saveData(d);
       refreshRecords();
     }
+
     function refreshRecords(){
       const d = loadData();
       const bs = d.bestScore || 0;
       const bt = d.bestTime || 0;
-      recordsText.textContent =
-        `Best score: ${bs}\nBest time: ${bt.toFixed(1)}s\nPseudo: ${(d.name||"—")}\nGlobal (monde) : nécessite serveur`;
-      // leaderboard list
-      const scores = d.scores || {};
-      const rows = Object.entries(scores)
-        .map(([name, v])=>({name, ...v}))
-        .sort((a,b)=> (b.bestScore - a.bestScore) || (b.bestTime - a.bestTime))
-        .slice(0, 10);
+      recordsText.textContent = `Pseudo : ${d.name||"—"}\nBest score : ${bs}\nBest time  : ${bt.toFixed(1)}s`;
+      const rows = Object.entries(d.scores||{})
+        .map(([name,v])=>({name,...v}))
+        .sort((a,b)=> (b.bestScore-a.bestScore) || (b.bestTime-a.bestTime))
+        .slice(0,10);
 
-      if(rows.length === 0){
-        boardList.textContent = "—";
-      }else{
-        boardList.textContent = rows.map((r,i)=>
-          `${String(i+1).padStart(2,"0")}. ${r.name}  •  score ${r.bestScore}  •  time ${r.bestTime.toFixed(1)}s`
-        ).join("\n");
-      }
+      boardList.textContent = rows.length
+        ? rows.map((r,i)=>`${String(i+1).padStart(2,"0")}. ${r.name}  score:${r.bestScore}  time:${r.bestTime.toFixed(1)}s`).join("\n")
+        : "—";
     }
     refreshRecords();
 
@@ -604,11 +459,12 @@ Tu veux des skins ? Easy. Musique/sons ? Easy.</p>
       }
     });
 
-    // --- UI navigation
+    // UI navigation
     function showOnly(which){
       menu.classList.add("hidden");
       board.classList.add("hidden");
       credits.classList.add("hidden");
+      pauseOverlay.classList.add("hidden");
       which.classList.remove("hidden");
     }
     btnBoard.onclick = ()=> showOnly(board);
@@ -616,171 +472,186 @@ Tu veux des skins ? Easy. Musique/sons ? Easy.</p>
     btnBack1.onclick = ()=> showOnly(menu);
     btnBack2.onclick = ()=> showOnly(menu);
 
-    // --- Pause / Quit
+    // Pause / quit
     function togglePause(){
       if(!running) return;
       paused = !paused;
       pauseOverlay.classList.toggle("hidden", !paused);
     }
     btnResume.onclick = ()=>{ paused=false; pauseOverlay.classList.add("hidden"); };
-    btnQuit.onclick = ()=> endToMenu(true);
+    btnQuit.onclick = ()=> endToMenu(false);
 
-    // --- Start game
-    btnPlay.addEventListener("click", ()=>{
+    // Start
+    btnPlay.onclick = ()=>{
       getPlayerName();
       startGame();
-    });
+    };
 
     function startGame(){
-      running = true;
-      paused = false;
-      timeAlive = 0;
-      score = 0;
-      spawnTimer = 0;
+      running=true; paused=false;
+      timeAlive=0; score=0; spawnTimer=0;
       obstacles.length = 0;
-      player.y = FLOOR;
-      player.vy = 0;
-      player.onGround = true;
-      player.crouch = false;
-      player.dead = false;
-      player.animT = 0;
+      player.y = FLOOR; player.vy=0; player.onGround=true; player.dead=false; player.animT=0;
 
       hud.classList.remove("hidden");
-      pauseOverlay.classList.add("hidden");
-      // hide menus
-      menu.classList.add("hidden");
-      board.classList.add("hidden");
-      credits.classList.add("hidden");
+      showOnly(document.createElement("div")); // hide all panels
+      menu.classList.add("hidden"); board.classList.add("hidden"); credits.classList.add("hidden"); pauseOverlay.classList.add("hidden");
     }
 
-    function endToMenu(fromQuit=false){
-      running = false;
-      paused = false;
-      pauseOverlay.classList.add("hidden");
+    function endToMenu(save=true){
+      if(save && !player.dead){
+        pushBest(score, timeAlive);
+      }
+      running=false; paused=false;
       hud.classList.add("hidden");
       showOnly(menu);
-      if(fromQuit){
-        // no score push if quit early? keep it anyway if you want:
-        // pushBest(score, timeAlive);
-      }
     }
 
-    // --- Collision helper
+    // Collision AABB
     function aabb(ax,ay,aw,ah, bx,by,bw,bh){
       return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
     }
 
-    // --- Drawing helpers
-    function rect(x,y,w,h,color){
-      ctx.fillStyle = color;
-      ctx.fillRect(x*scale, y*scale, w*scale, h*scale);
-    }
-    function text(x,y,str,size,color,align="left"){
-      ctx.fillStyle = color;
-      ctx.font = `${Math.floor(size*scale)}px monospace`;
-      ctx.textAlign = align;
-      ctx.fillText(str, x*scale, y*scale);
-    }
+    // Draw: sky with transition blend
+    function drawSky(mode, blend){
+      // blend 0 -> old, 1 -> new
+      // day colors
+      const dayTop = "#9fd7ff", dayBot = "#cfeeff";
+      // night colors
+      const nightTop = "#08102a", nightBot = "#03040c";
 
-    function drawSky(mode){
-      if(mode === "DAY"){
-        // gradient sky
-        const g = ctx.createLinearGradient(0,0,0,canvas.height);
-        g.addColorStop(0, "#9cd7ff");
-        g.addColorStop(1, "#cfeeff");
-        ctx.fillStyle = g;
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-      }else{
-        const g = ctx.createLinearGradient(0,0,0,canvas.height);
-        g.addColorStop(0, "#0a1230");
-        g.addColorStop(1, "#050814");
-        ctx.fillStyle = g;
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-        // stars
-        ctx.fillStyle = "rgba(255,255,255,.8)";
-        for(let i=0;i<80;i++){
-          const sx = (i*67 % BASE_W);
-          const sy = (i*37 % 120);
-          rect(sx, sy, 1, 1, "rgba(255,255,255,.85)");
+      // if transitioning, choose based on target mode
+      // we’ll compute target colors from (mode) and use blend
+      const targetTop = (mode==="DAY") ? dayTop : nightTop;
+      const targetBot = (mode==="DAY") ? dayBot : nightBot;
+
+      // old mode is opposite
+      const oldTop = (mode==="DAY") ? nightTop : dayTop;
+      const oldBot = (mode==="DAY") ? nightBot : dayBot;
+
+      // simple lerp helper (hex lerp)
+      function hexToRgb(h){
+        const n = parseInt(h.slice(1),16);
+        return {r:(n>>16)&255, g:(n>>8)&255, b:n&255};
+      }
+      function lerp(a,b,t){ return a + (b-a)*t; }
+      function rgbToHex(r,g,b){
+        const x = (r<<16)|(g<<8)|b;
+        return "#"+x.toString(16).padStart(6,"0");
+      }
+      const A=hexToRgb(oldTop), B=hexToRgb(targetTop);
+      const C=hexToRgb(oldBot), D=hexToRgb(targetBot);
+
+      const top = rgbToHex(
+        Math.round(lerp(A.r,B.r,blend)),
+        Math.round(lerp(A.g,B.g,blend)),
+        Math.round(lerp(A.b,B.b,blend))
+      );
+      const bot = rgbToHex(
+        Math.round(lerp(C.r,D.r,blend)),
+        Math.round(lerp(C.g,D.g,blend)),
+        Math.round(lerp(C.b,D.b,blend))
+      );
+
+      // gradient fill (still pixel)
+      const g = ctx.createLinearGradient(0,0,0,canvas.height);
+      g.addColorStop(0, top);
+      g.addColorStop(1, bot);
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // stars only in night (fade by blend if going to night)
+      const starAlpha = (mode==="NIGHT") ? blend : (1-blend);
+      if(starAlpha > 0.02){
+        for(let i=0;i<60;i++){
+          const sx = (i*53) % BASE_W;
+          const sy = (i*29) % 80;
+          rect(sx, sy, 1, 1, `rgba(255,255,255,${0.7*starAlpha})`);
         }
       }
-    }
 
-    function drawSunClouds(mode, t){
-      if(mode === "DAY"){
-        // sun
-        rect(BASE_W-42, 14, 18, 18, "#ffe54a");
-        rect(BASE_W-40, 16, 14, 14, "#fff27a");
-
-        // clouds
-        const cx1 = (BASE_W - (t*18)% (BASE_W+80)) - 20;
-        const cx2 = (BASE_W - (t*12)% (BASE_W+120)) - 50;
-        drawCloud(cx1, 26);
-        drawCloud(cx2, 48);
-      }else{
-        // moon
-        rect(BASE_W-44, 14, 18, 18, "#cdd7ff");
-        rect(BASE_W-40, 16, 14, 14, "#e8efff");
+      // VHS flash on mode change
+      if(transitionFlash > 0){
+        rect(0,0,BASE_W,BASE_H,`rgba(255,255,255,${transitionFlash})`);
       }
     }
-    function drawCloud(x,y){
-      rect(x, y, 26, 10, "rgba(255,255,255,.92)");
-      rect(x+4, y-4, 12, 10, "rgba(255,255,255,.92)");
-      rect(x+12, y-6, 12, 12, "rgba(255,255,255,.92)");
-      rect(x+18, y-2, 12, 10, "rgba(255,255,255,.92)");
+
+    function drawSunMoon(mode, blend){
+      // day: sun, night: moon, fade with blend
+      if(mode==="DAY"){
+        const a = blend;
+        rect(BASE_W-32, 12, 12, 12, `rgba(255,230,80,${a})`);
+        rect(BASE_W-30, 14, 8, 8, `rgba(255,245,160,${a})`);
+      }else{
+        const a = blend;
+        rect(BASE_W-32, 12, 12, 12, `rgba(210,220,255,${a})`);
+        rect(BASE_W-29, 14, 7, 7, `rgba(235,240,255,${a})`);
+      }
     }
 
-    function drawCity(mode, dt){
-      // scroll buildings
-      const speedBack = 18;
-      const speedFront = 30;
+    function drawGround(){
+      rect(0, GROUND_Y, BASE_W, ROAD_H, "#10111a");
+      for(let x=0;x<BASE_W;x+=18){
+        rect(x+6, GROUND_Y+8, 10, 2, "rgba(255,255,255,.35)");
+      }
+      rect(0, GRASS_Y, BASE_W, BASE_H-GRASS_Y, "#0f5f17");
+      rect(0, GRASS_Y, BASE_W, 2, "rgba(0,0,0,.35)");
+    }
+
+    function drawCity(dt, mode){
+      const speedBack = 10;
+      const speedFront = 18;
 
       for(const b of buildings){
-        const sp = b.layer===0 ? speedBack : speedFront;
-        b.x -= sp * dt;
+        b.x -= (b.layer===0 ? speedBack : speedFront) * dt;
       }
       // recycle
-      const last = buildings[buildings.length-1];
-      for(let i=0;i<buildings.length;i++){
-        const b = buildings[i];
-        if(b.x + b.w < -120){
-          // place after last
-          const prev = buildings.reduce((m,v)=> v.x>m.x ? v : m, buildings[0]);
-          b.w = randi(26, 62);
-          b.h = randi(38, 96);
-          b.layer = Math.random()<0.5 ? 0 : 1;
-          b.winCols = randi(3,6);
-          b.winRows = randi(3,11);
-          b.tone = randi(0,2);
-          b.x = prev.x + prev.w + randi(8,18);
+      for(const b of buildings){
+        if(b.x + b.w < -80){
+          const far = buildings.reduce((m,v)=> (v.x+v.w)>(m.x+m.w) ? v : m, buildings[0]);
+          b.x = far.x + far.w + randi(8,16);
+
+          // keep windows stable? if we keep same b.win it’s OK.
+          // But for variety, we sometimes regenerate (still stable, not moving)
+          if(Math.random() < 0.35){
+            b.w = randi(28, 62);
+            b.h = randi(36, 96);
+            const seed = (b.id*98765) ^ (b.w<<8) ^ (b.h<<16);
+            b.win = makeWindows(b.w, b.h, seed);
+            b.shadeW = randi(6,14);
+          }
+          // always anchored
+          b.baseY = GROUND_Y;
+          b.layer = Math.random() < 0.55 ? 0 : 1;
         }
       }
 
-      // draw
+      // draw back then front
       for(const layer of [0,1]){
         for(const b of buildings){
           if(b.layer !== layer) continue;
-          const baseY = GROUND_Y - b.h + (layer===0 ? -8 : 0);
-          const shade = (b.tone===0? "#2b2f3a" : b.tone===1? "#323642" : "#3a3f4c");
-          const shade2 = (b.tone===0? "#1e2230" : b.tone===1? "#252a36" : "#2b2f3a");
-          rect(b.x, baseY, b.w, b.h, layer===0 ? shade2 : shade);
 
-          // windows (more, not blinking)
-          const winColor = mode==="DAY" ? "rgba(255,255,160,.55)" : "rgba(255,255,160,.92)";
+          const baseY = b.baseY;                 // <<< fixed to ground
+          const topY = baseY - b.h;
+
+          // building
+          rect(b.x, topY, b.w, b.h, (layer===0? b.tone2 : b.tone));
+          // side shade
+          rect(b.x + b.w - b.shadeW, topY, b.shadeW, b.h, "rgba(0,0,0,.18)");
+
+          // windows (stable map)
+          const winColor = (mode==="NIGHT") ? "rgba(255,255,170,.85)" : "rgba(255,255,170,.35)";
           const padX = 4, padY = 6;
           const wW = 2, wH = 3;
-          const gapX = Math.max(3, Math.floor((b.w - padX*2) / b.winCols));
+          const gapX = Math.max(4, Math.floor((b.w - padX*2) / b.win.cols));
           const gapY = 6;
 
-          for(let r=0;r<b.winRows;r++){
-            for(let c=0;c<b.winCols;c++){
-              // random but stable per building position
-              const seed = (Math.floor(b.x)+b.w*13+b.h*7+r*11+c*17) % 10;
-              const on = seed < 6; // ~60%
-              if(!on) continue;
+          for(let r=0;r<b.win.rows;r++){
+            for(let c=0;c<b.win.cols;c++){
+              if(!b.win.map[r][c]) continue;
               const wx = b.x + padX + c*gapX;
-              const wy = baseY + padY + r*gapY;
-              if(wy+3 > GROUND_Y-6) continue;
+              const wy = topY + padY + r*gapY;
+              if(wy + wH > baseY-3) continue;
               rect(wx, wy, wW, wH, winColor);
             }
           }
@@ -788,117 +659,109 @@ Tu veux des skins ? Easy. Musique/sons ? Easy.</p>
       }
     }
 
-    function drawGround(mode){
-      // road
-      rect(0, GROUND_Y, BASE_W, 22, "#252a33");
-      // road line
-      for(let x=0;x<BASE_W;x+=18){
-        rect(x+6, GROUND_Y+12, 10, 2, "rgba(255,255,255,.55)");
-      }
-      // grass
-      rect(0, GRASS_Y, BASE_W, BASE_H-GRASS_Y, "#1f8a16");
-    }
-
     function drawPlayer(dt){
-      // anim
-      player.animT += dt * (player.onGround ? 9 : 5);
+      player.animT += dt * (player.onGround ? 10 : 5);
+      const frame = Math.floor(player.animT) % 4;
 
       const px = player.x;
       const baseY = player.y;
 
-      // crouch changes hitbox visually only (we keep hitbox stable-ish but lower)
+      const skin="#e8c7a2", shirt="#f2f2f2", pants="#2f6cff", shoe="#07070c", hair="#5a3b22";
+
+      // crouch hitbox visual
       const crouch = player.crouch && player.onGround;
-      const headY = crouch ? baseY-18 : baseY-30;
+      const headY = crouch ? baseY-18 : baseY-28;
 
       // shadow
-      rect(px-2, baseY+2, 18, 3, "rgba(0,0,0,.25)");
+      rect(px-2, baseY+2, 16, 3, "rgba(0,0,0,.35)");
 
-      // body colors
-      const skin = "#e8c7a2";
-      const shirt = "#ffffff";
-      const pants = "#2f6cff";
-      const shoe = "#0b0c10";
-      const hair = "#5a3b22";
-
-      // legs run frames
-      const frame = Math.floor(player.animT) % 4;
-      const leg1 = (frame===0||frame===2) ? 0 : 2;
-      const leg2 = (frame===0||frame===2) ? 2 : 0;
-
-      // legs
-      rect(px+6, baseY-10, 3, 10, pants);
-      rect(px+10, baseY-10, 3, 10, pants);
-      rect(px+6+leg1, baseY-2, 4, 3, shoe);
-      rect(px+10+leg2, baseY-2, 4, 3, shoe);
+      // legs (run)
+      const legA = (frame===0||frame===2) ? 0 : 2;
+      const legB = (frame===0||frame===2) ? 2 : 0;
+      rect(px+5, baseY-10, 3, 10, pants);
+      rect(px+9, baseY-10, 3, 10, pants);
+      rect(px+5+legA, baseY-2, 4, 3, shoe);
+      rect(px+9+legB, baseY-2, 4, 3, shoe);
 
       // torso
-      rect(px+5, baseY-24, 10, 14, shirt);
+      rect(px+4, baseY-22, 9, 12, shirt);
 
-      // arms (swing)
-      const armSwing = player.onGround ? (frame===0?0:frame===1?1:frame===2?0:-1) : 0;
-      rect(px+2, baseY-22, 3, 10, skin);
-      rect(px+15, baseY-22, 3, 10, skin);
-      rect(px+2+armSwing, baseY-14, 3, 3, skin);
-      rect(px+15-armSwing, baseY-14, 3, 3, skin);
+      // arms
+      const swing = player.onGround ? (frame===1?1:frame===3?-1:0) : 0;
+      rect(px+1, baseY-21, 3, 9, skin);
+      rect(px+13, baseY-21, 3, 9, skin);
+      rect(px+1+swing, baseY-14, 3, 3, skin);
+      rect(px+13-swing, baseY-14, 3, 3, skin);
 
-      // head
-      rect(px+6, headY, 8, 8, skin);
-
-      // hair ABOVE eyes (fix)
-      rect(px+6, headY, 8, 3, hair);
-      rect(px+5, headY+2, 10, 2, hair);
+      // head + hair (no hair in eyes)
+      rect(px+5, headY, 7, 7, skin);
+      rect(px+5, headY, 7, 3, hair);
+      rect(px+4, headY+2, 9, 2, hair);
 
       // eyes
-      rect(px+8, headY+4, 1, 1, "#1b1b1b");
-      rect(px+11, headY+4, 1, 1, "#1b1b1b");
+      rect(px+7, headY+4, 1, 1, "#0d0d12");
+      rect(px+10, headY+4, 1, 1, "#0d0d12");
     }
 
     function drawObstacle(o){
-      const x = o.x, y = o.y;
-      if(o.type.key === "TRASH"){
-        // trash bin pixel art (kills)
+      const x=o.x, y=o.y;
+      if(o.type.key==="TRASH"){
         rect(x, y-o.h, o.w, o.h, "#2c8f7b");
-        rect(x+1, y-o.h+1, o.w-2, 3, "#1f6f60"); // lid
-        rect(x+3, y-o.h+6, 2, 2, "rgba(255,255,255,.25)");
-        rect(x+8, y-o.h+9, 2, 2, "rgba(0,0,0,.25)");
-        // wheels
-        rect(x+2, y-1, 2, 2, "#121418");
-        rect(x+o.w-4, y-1, 2, 2, "#121418");
-      }else if(o.type.key === "CAR"){
-        // car pixel art (kills)
-        rect(x, y-o.h, o.w, o.h, "#e23a3a");
-        rect(x+4, y-o.h-6, o.w-10, 6, "#c92f2f"); // top
-        rect(x+6, y-o.h-5, 6, 3, "#9bd7ff");      // window
-        rect(x+14, y-o.h-5, 6, 3, "#9bd7ff");
-        rect(x+4, y-2, 5, 4, "#121418");          // wheel
-        rect(x+o.w-9, y-2, 5, 4, "#121418");
-        rect(x+5, y-1, 3, 2, "#2b2f3a");
-        rect(x+o.w-8, y-1, 3, 2, "#2b2f3a");
+        rect(x+1, y-o.h+1, o.w-2, 3, "#1f6f60");
+        rect(x+2, y-o.h+6, 2, 2, "rgba(255,255,255,.25)");
+        rect(x+o.w-4, y-o.h+9, 2, 2, "rgba(0,0,0,.25)");
+        rect(x+2, y-1, 2, 2, "#050509");
+        rect(x+o.w-4, y-1, 2, 2, "#050509");
+      }else if(o.type.key==="CAR"){
+        rect(x, y-o.h, o.w, o.h, "#c52b2b");
+        rect(x+4, y-o.h-6, o.w-10, 6, "#9d1f1f");
+        rect(x+6, y-o.h-5, 6, 3, "#a8dcff");
+        rect(x+14, y-o.h-5, 6, 3, "#a8dcff");
+        rect(x+4, y-2, 5, 4, "#050509");
+        rect(x+o.w-9, y-2, 5, 4, "#050509");
       }else{
-        // cone pixel art (kills)
         rect(x+3, y-o.h, 4, o.h, "#ff9f2f");
         rect(x+2, y-o.h+4, 6, 2, "#ffd18b");
         rect(x+2, y-o.h+8, 6, 2, "#ffd18b");
-        rect(x, y-2, o.w, 2, "#2b2f3a");
+        rect(x, y-2, o.w, 2, "#0a0a10");
       }
     }
 
-    function drawOverlay(mode){
-      if(mode === "NIGHT"){
-        rect(0,0,BASE_W,BASE_H,"rgba(0,0,0,.18)");
+    // PS1-ish “color banding” overlay (cheap but effective)
+    function postFX(mode, blend){
+      // darker vignette strips
+      for(let y=0;y<BASE_H;y+=10){
+        rect(0,y,BASE_W,1,"rgba(0,0,0,.08)");
+      }
+      // night overlay stronger
+      if(mode==="NIGHT"){
+        rect(0,0,BASE_W,BASE_H,`rgba(0,0,0,${0.15*blend})`);
       }
     }
 
-    // --- Update loop
+    // Main loop
     let last = performance.now();
     function loop(now){
       const dt = Math.min(0.033, (now-last)/1000);
       last = now;
 
-      // MENU mode indicator continues
-      const m = getCycleMode(timeAlive);
-      menuMode.textContent = m;
-      hudMode.textContent = m;
+      // Detect mode changes + trigger transition animation
+      const targetMode = getModeAt(timeAlive);
+      if(targetMode !== currentMode && transitionT >= 1){
+        currentMode = targetMode;
+        transitionT = 0;
+        transitionFlash = 0.20; // quick VHS flash
+      }
+
+      // Transition progress
+      if(transitionT < 1){
+        transitionT += dt / 2.0; // ~2s transition
+        if(transitionT > 1) transitionT = 1;
+      }
+      if(transitionFlash > 0){
+        transitionFlash = Math.max(0, transitionFlash - dt*0.9);
+      }
+      const blend = smoothstep(transitionT);
 
       if(running && !paused && !player.dead){
         timeAlive += dt;
@@ -913,10 +776,8 @@ Tu veux des skins ? Easy. Musique/sons ? Easy.</p>
         // physics
         player.vy += GRAV*dt;
         player.y += player.vy*dt;
-
-        const floorY = FLOOR;
-        if(player.y >= floorY){
-          player.y = floorY;
+        if(player.y >= FLOOR){
+          player.y = FLOOR;
           player.vy = 0;
           player.onGround = true;
         }else{
@@ -927,97 +788,78 @@ Tu veux des skins ? Easy. Musique/sons ? Easy.</p>
         spawnTimer -= dt;
         if(spawnTimer <= 0){
           spawnObstacle();
-          // rhythm changes with time
-          const base = 1.2;
+          const base = 1.15;
           const fast = Math.max(0.55, base - timeAlive*0.01);
-          spawnTimer = rand(fast, fast+0.5);
+          spawnTimer = rand(fast, fast+0.55);
         }
 
         // move obstacles
         for(const o of obstacles){
           o.x -= o.speed * dt;
         }
-        // remove off-screen
+
+        // remove + score
         while(obstacles.length && obstacles[0].x + obstacles[0].w < -20){
           obstacles.shift();
-          // score increases when you pass obstacles
           score += 1;
         }
 
         // collision
-        // player hitbox
-        const ph = player.crouch && player.onGround ? 24 : player.h;
-        const pyTop = player.y - ph;
+        const ph = (player.crouch && player.onGround) ? 22 : player.h;
         const px = player.x;
+        const pyTop = player.y - ph;
 
         for(const o of obstacles){
           const oyTop = o.y - o.h;
           if(aabb(px, pyTop, player.w, ph, o.x, oyTop, o.w, o.h)){
-            // DEAD
             player.dead = true;
-            // save best (keep 1 record per pseudo)
             pushBest(score, timeAlive);
-            // small delay then menu
-            setTimeout(()=> endToMenu(false), 850);
+            setTimeout(()=> endToMenu(false), 900);
             break;
           }
         }
       }
 
-      // --- Draw frame (always)
-      const mode = getCycleMode(timeAlive);
-      drawSky(mode);
-      drawSunClouds(mode, timeAlive);
-      drawCity(mode, dt);
-      drawGround(mode);
+      // DRAW
+      drawSky(currentMode, blend);
+      drawSunMoon(currentMode, blend);
+      drawCity(dt, currentMode);
+      drawGround();
 
-      // obstacles
-      for(const o of obstacles){
-        drawObstacle(o);
-      }
-
-      // player
+      for(const o of obstacles) drawObstacle(o);
       drawPlayer(dt);
-
-      // overlay
-      drawOverlay(mode);
+      postFX(currentMode, blend);
 
       // HUD
       if(running){
         hudScore.textContent = String(score);
         hudTime.textContent = `${timeAlive.toFixed(1)}s`;
+        hudMode.textContent = currentMode;
       }
 
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);
 
-    // --- HUD visible only in game
-    const obsMenu = new MutationObserver(()=>{});
-    function updateHud(){
-      if(running) hud.classList.remove("hidden");
-      else hud.classList.add("hidden");
-    }
-    setInterval(updateHud, 200);
+    // Show HUD only in game
+    setInterval(()=>{ hud.classList.toggle("hidden", !running); }, 120);
 
-    // --- Pause / resume by P
-    function setPaused(v){
-      paused = v;
-      pauseOverlay.classList.toggle("hidden", !paused);
-    }
-    function togglePause(){
-      if(!running) return;
-      setPaused(!paused);
+    // Buttons / navigation
+    function showOnly(which){
+      menu.classList.add("hidden"); board.classList.add("hidden"); credits.classList.add("hidden"); pauseOverlay.classList.add("hidden");
+      which.classList.remove("hidden");
     }
 
-    // --- Quit button available via ESC too
-    window.addEventListener("keydown", (e)=>{
-      if(e.code === "Escape" && running){
-        togglePause();
-      }
-    });
+    btnPlay.onclick = ()=>{ getPlayerName(); startGame(); };
+    btnBoard.onclick = ()=> showOnly(board);
+    btnCredits.onclick = ()=> showOnly(credits);
+    btnBack1.onclick = ()=> showOnly(menu);
+    btnBack2.onclick = ()=> showOnly(menu);
 
-    // update records on load
+    btnResume.onclick = ()=>{ paused=false; pauseOverlay.classList.add("hidden"); };
+    btnQuit.onclick = ()=> endToMenu(false);
+
+    // init records view
     refreshRecords();
   </script>
 </body>
